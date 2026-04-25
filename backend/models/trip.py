@@ -10,9 +10,17 @@ class TripCreate(BaseModel):
     travel_style: List[str]
     people: int
 
+
+class TripRegenerate(BaseModel):
+    destination: str
+    departure_city: str
+    days: int
+    budget: str
+    travel_style: List[str]
+    people: int
+
 class TripUpdate(BaseModel):
     itinerary: Optional[dict] = None
-    is_public: Optional[bool] = None
     days: Optional[int] = None
     budget: Optional[str] = None 
 
@@ -23,5 +31,4 @@ class TripResponse(BaseModel):
     days: int
     budget: str
     itinerary: Optional[dict] = None
-    is_public: bool = False
     created_at: datetime

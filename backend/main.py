@@ -1,10 +1,11 @@
 ﻿import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import auth, maps, trips
+from routers import admin, auth, maps, trips, catalog
 from database import create_tables
+from services.health_metrics import record_request
 
 app = FastAPI(
     title="AI Travel Planner API",
@@ -34,6 +35,19 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(trips.router)
 app.include_router(maps.router)
+app.include_router(catalog.router)
+app.include_router(admin.router)
+
+
+@app.middleware("http")
+async def capture_request_metrics(request: Request, call_next):
+    try:
+        response = await call_next(request)
+    except Exception:
+        record_request(500)
+        raise
+    record_request(response.status_code)
+    return response
 
 
 @app.on_event('startup')

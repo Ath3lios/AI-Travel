@@ -285,6 +285,11 @@ export default function Navbar() {
                       <Link to="/dashboard" className="nav-menu-link" onClick={() => setOpenMenu(false)}>
                         Chuyến đi của tôi
                       </Link>
+                      {user.role === 'admin' && (
+                        <Link to="/admin" className="nav-menu-link" onClick={() => setOpenMenu(false)}>
+                          Quản trị hệ thống
+                        </Link>
+                      )}
                       <button onClick={handleLogout} className="nav-menu-logout" type="button">
                         Đăng xuất
                       </button>

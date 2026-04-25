@@ -1,14 +1,14 @@
-﻿import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
-import WelcomeScreen from './components/WelcomeScreen'
 
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const TripDetail = lazy(() => import('./pages/TripDetail'))
+const Admin = lazy(() => import('./pages/Admin'))
 
 function RouteLoading() {
   return (
@@ -24,18 +24,14 @@ function PrivateRoute({ children }) {
   return user ? children : <Navigate to="/login" />
 }
 
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <RouteLoading />
+  if (!user) return <Navigate to="/login" />
+  return user.role === 'admin' ? children : <Navigate to="/dashboard" />
+}
+
 export default function App() {
-  const [showWelcome, setShowWelcome] = useState(() => !sessionStorage.getItem('welcomed'))
-
-  const handleGetStarted = () => {
-    sessionStorage.setItem('welcomed', '1')
-    setShowWelcome(false)
-  }
-
-  if (showWelcome) {
-    return <WelcomeScreen onGetStarted={handleGetStarted} />
-  }
-
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -47,6 +43,7 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/trips/:id" element={<PrivateRoute><TripDetail /></PrivateRoute>} />
+            <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           </Routes>
         </Suspense>
       </BrowserRouter>

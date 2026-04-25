@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     secret_key: str = "secret"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440
+    admin_emails: str = ""
 
     # Tool API keys (để trống = dùng mock data)
     openweather_api_key: str = ""

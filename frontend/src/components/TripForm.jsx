@@ -216,17 +216,7 @@ export default function TripForm({ onTripCreated, editTrip }) {
     try {
       let res
       if (isEdit) {
-        // Gọi POST để generate lịch trình mới, rồi PUT đè lên trip cũ
-        const generated = await createTripWithRecovery(payload, startedAt)
-        console.log('Generated trip:', generated.data)
-        res = await api.put(`/trips/${editTrip.id}`, {
-          itinerary: generated.data.itinerary,
-          days: days,    
-          budget: form.budget
-        })
-        console.log('Updated trip:', res.data)
-        // Xóa trip mới vừa tạo (chỉ dùng để lấy itinerary)
-        await api.delete(`/trips/${generated.data.id}`)
+        res = await api.post(`/trips/${editTrip.id}/regenerate`, payload, { timeout: CREATE_TRIP_TIMEOUT_MS })
         if (typeof onTripCreated === 'function') {
           try {
             onTripCreated(res.data)
@@ -503,4 +493,3 @@ export default function TripForm({ onTripCreated, editTrip }) {
     </div>
   )
 }
-

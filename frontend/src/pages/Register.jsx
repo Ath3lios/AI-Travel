@@ -18,7 +18,7 @@ export default function Register() {
     try {
       const res = await api.post('/auth/register', form)
       login(res.data.access_token, res.data.user)
-      navigate('/dashboard')
+      navigate(res.data.user?.role === 'admin' ? '/admin' : '/dashboard')
     } catch (err) {
       setError(err.response?.data?.detail || 'Đăng ký thất bại')
     } finally {

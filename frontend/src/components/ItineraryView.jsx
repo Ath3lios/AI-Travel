@@ -2,12 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 
 const GOONG_MAP_KEY = import.meta.env.VITE_GOONG_MAP_KEY || ''
 
-const PERIOD_MAP = {
-  'Sang':  { label: 'Buổi sáng',  icon: '🌅', bg: '#fef9c3', color: '#92400e' },
-  'Trua':  { label: 'Buổi trưa',  icon: '☀️',  bg: '#fff7ed', color: '#9a3412' },
-  'Chieu': { label: 'Buổi chiều', icon: '🌤️', bg: '#f0f9ff', color: '#0369a1' },
-  'Toi':   { label: 'Buổi tối',   icon: '🌙', bg: '#f5f3ff', color: '#6d28d9' },
-}
 
 const BUDGET_KEYS = {
   luu_tru: '🏠 Lưu trú', an_uong: '🍜 Ăn uống',
@@ -528,7 +522,6 @@ function DayView({ day, dayIndex, accommodation }) {
         {/* Schedule: mobile ở dưới, desktop ở bên trái */}
           <div className="day-schedule-col" style={{ background:'white', borderRadius:16, border:'1px solid #f1f5f9', padding:'14px', boxShadow:'0 2px 8px rgba(0,0,0,0.03)' }}>
             {day.schedule?.map((item, idx) => {
-          const period = PERIOD_MAP[item.period] || { label:item.period, icon:'📌', bg:'#f8fafc', color:'#64748b' }
           const placeIcon = getPlaceIcon(item)
           const hasCoords = hasValidCoords(item)
           const placeIdx = hasCoords ? finalMapPlaces.findIndex(p => p.place === item.place) : -1
@@ -537,7 +530,7 @@ function DayView({ day, dayIndex, accommodation }) {
             const openModal = () => {
               const rect = dayDetailRef.current?.getBoundingClientRect?.()
               if (rect) setModalRect({ left: rect.left, width: rect.width })
-              setModalItem({ ...item, periodLabel: period.label })
+              setModalItem({ ...item })
             }
           const handleMapClick = (e) => {
             e.stopPropagation()
@@ -562,7 +555,6 @@ function DayView({ day, dayIndex, accommodation }) {
                 <div className="schedule-item-content" style={{ minWidth:0 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5, flexWrap:'wrap' }}>
                   <span style={{ fontSize:14, fontWeight:600, color:'#0f172a', lineHeight:1.35, minWidth:0, maxWidth:'100%', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.place}</span>
-                  <span style={{ fontSize:11, padding:'2px 7px', borderRadius:6, background:period.bg, color:period.color, fontWeight:600 }}>{period.label}</span>
                   {placeIdx !== -1 && (
                     <span onClick={handleMapClick} style={{ fontSize:10, padding:'2px 6px', borderRadius:6, background:'#eef2ff', color:'#6366f1', fontWeight:600, cursor:'pointer' }}>
                       #{placeIdx+1} bản đồ
