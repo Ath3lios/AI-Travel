@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 
 const GOONG_MAP_KEY = import.meta.env.VITE_GOONG_MAP_KEY || ''
 
-
 const BUDGET_KEYS = {
   luu_tru: '🏠 Lưu trú', an_uong: '🍜 Ăn uống',
   di_chuyen: '🚗 Di chuyển', hoat_dong: '🎯 Hoạt động',
@@ -21,7 +20,6 @@ const DAY_COLORS = [
   '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6',
 ]
 
-// Rule icon theo tu ngu Viet Nam + cham diem theo ngu canh.
 const PLACE_ICON_RULES = [
   { icon: '✈️', strong: ['san bay', 'airport'], weak: ['chuyen bay', 'may bay', 'terminal'] },
   { icon: '🚆', strong: ['ga', 'tau hoa', 'duong sat'], weak: ['station', 'railway'] },
@@ -34,7 +32,7 @@ const PLACE_ICON_RULES = [
     weak: ['quan pho', 'pho bo', 'pho ga', 'bun', 'com tam', 'com ga', 'com nieu'],
     negative: ['pho di bo', 'pho co', 'khu pho', 'duong pho'],
   },
-  { icon: '☕', strong: ['ca phe', 'cafe'], weak: ['tra sua', 'coffee'] },
+  { icon: '☕', strong: ['ca phe', 'cafe'], weak: ['tra sữa', 'coffee'] },
   {
     icon: '🛍️',
     strong: ['cho dem', 'mua sam', 'trung tam thuong mai'],
@@ -98,11 +96,9 @@ function getPlaceIcon(item) {
   const allText = `${placeText} ${addressText} ${descText} ${transportText}`.trim()
 
   const scoreRule = (rule) => {
-    // Loai tru match nhiem (vi du "bai do xe", "pho di bo"...)
     const negativeHits = (rule.negative || []).reduce((sum, phrase) => sum + countPhraseHits(allText, phrase), 0)
     if (negativeHits > 0) return -1000
 
-    // Uu tien ten dia diem > dia chi > mo ta/transport.
     let score = 0
     for (const phrase of rule.strong || []) {
       score += countPhraseHits(placeText, phrase) * 10
@@ -203,25 +199,25 @@ function GoongMap({ places, activePlace, dayIndex = 0 }) {
 
     map.on('load', () => {
       if (valid.length > 1) {
-        map.fitBounds(bounds, { padding: 55, maxZoom: 15, duration: 600 })
+        map.fitBounds(bounds, { padding: 55, maxZoom: 15, duration: 800 })
         const coords = valid.map(p => [p.lng, p.lat])
         map.addSource('route-bg', { type:'geojson', data:{ type:'Feature', geometry:{ type:'LineString', coordinates:coords }}})
-        map.addLayer({ id:'route-bg', type:'line', source:'route-bg', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':'#000','line-width':7,'line-opacity':0.07}})
+        map.addLayer({ id:'route-bg', type:'line', source:'route-bg', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':'#000','line-width':8,'line-opacity':0.05}})
         map.addSource('route-main', { type:'geojson', data:{ type:'Feature', geometry:{ type:'LineString', coordinates:coords }}})
-        map.addLayer({ id:'route-main', type:'line', source:'route-main', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':activeColor,'line-width':3.5,'line-opacity':0.9,'line-dasharray':[2,1.8]}})
+        map.addLayer({ id:'route-main', type:'line', source:'route-main', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':activeColor,'line-width':4,'line-opacity':0.9,'line-dasharray':[1.5, 1.5]}})
       }
 
       valid.forEach((place, idx) => {
         const isFirst = idx === 0, isLast = idx === valid.length - 1
         const outer = document.createElement('div')
-        outer.style.cssText = `width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid ${activeColor};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 10px ${activeColor}55;transition:transform 0.18s,box-shadow 0.18s;font-family:'DM Sans',sans-serif;`
+        outer.style.cssText = `width:40px;height:40px;border-radius:50%;background:#fff;border:3px solid ${activeColor};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px ${activeColor}40, 0 1px 3px rgba(0,0,0,0.1);transition:all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);font-family:'DM Sans',sans-serif;`
         const inner = document.createElement('div')
-        inner.style.cssText = `width:22px;height:22px;border-radius:50%;background:${isFirst?activeColor:isLast?'#ef4444':'#f1f5f9'};display:flex;align-items:center;justify-content:center;font-size:${isFirst||isLast?'12':'11'}px;font-weight:800;color:${isFirst||isLast?'#fff':activeColor};border:${isFirst||isLast?'none':`1.5px solid ${activeColor}`};transition:background 0.18s;`
+        inner.style.cssText = `width:26px;height:26px;border-radius:50%;background:${isFirst?activeColor:isLast?'#ef4444':'#f8fafc'};display:flex;align-items:center;justify-content:center;font-size:${isFirst||isLast?'13':'12'}px;font-weight:800;color:${isFirst||isLast?'#fff':activeColor};transition:background 0.2s;`
         inner.textContent = isFirst ? '▶' : isLast ? '⚑' : String(idx+1)
         outer.appendChild(inner)
 
-        const popup = new window.goongjs.Popup({ offset:24, closeButton:false, maxWidth:'220px' })
-          .setHTML(`<div style="font-family:'DM Sans',sans-serif;padding:5px 2px"><div style="display:flex;align-items:flex-start;gap:7px"><span style="min-width:20px;height:20px;border-radius:50%;background:${activeColor};color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;flex-shrink:0">${idx+1}</span><div><div style="font-size:13px;font-weight:700;color:#0f0f1a;line-height:1.3">${place.place}</div>${place.address?`<div style="font-size:11px;color:#94a3b8;margin-top:2px">📍 ${place.address}</div>`:''}${place.time?`<div style="font-size:11px;color:${activeColor};margin-top:2px;font-weight:600">🕐 ${place.time}</div>`:''}${idx<valid.length-1?`<div style="font-size:10px;color:#94a3b8;margin-top:4px;border-top:1px solid #f1f5f9;padding-top:4px">➜ ${valid[idx+1].place}</div>`:''}</div></div></div>`)
+        const popup = new window.goongjs.Popup({ offset:28, closeButton:false, maxWidth:'240px', className: 'premium-popup' })
+          .setHTML(`<div style="font-family:'DM Sans',sans-serif;padding:6px 4px"><div style="display:flex;align-items:flex-start;gap:8px"><span style="min-width:24px;height:24px;border-radius:50%;background:${activeColor};color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:2px;flex-shrink:0;box-shadow:0 2px 6px ${activeColor}66">${idx+1}</span><div><div style="font-size:14px;font-weight:700;color:#0f172a;line-height:1.3;letter-spacing:-0.2px">${place.place}</div>${place.address?`<div style="font-size:12px;color:#64748b;margin-top:4px">📍 ${place.address}</div>`:''}${place.time?`<div style="font-size:12px;color:${activeColor};margin-top:4px;font-weight:700">🕐 ${place.time}</div>`:''}${idx<valid.length-1?`<div style="font-size:11px;color:#94a3b8;margin-top:6px;border-top:1px dashed #e2e8f0;padding-top:6px">➜ ${valid[idx+1].place}</div>`:''}</div></div></div>`)
 
         outer.addEventListener('mouseenter', () => popup.addTo(map))
         outer.addEventListener('mouseleave', () => popup.remove())
@@ -238,13 +234,15 @@ function GoongMap({ places, activePlace, dayIndex = 0 }) {
     const valid = (places || []).filter(hasValidCoords)
     const place = valid[activePlace]
     if (!place) return
-    mapInstanceRef.current.flyTo({ center:[place.lng, place.lat], zoom:16, speed:1.2, curve:1 })
+    mapInstanceRef.current.flyTo({ center:[place.lng, place.lat], zoom:15.5, speed:1.4, curve:1.2 })
     markersRef.current.forEach(({ outer, inner }, i) => {
       const isActive = i === activePlace
-      outer.style.transform  = isActive ? 'scale(1.3)' : 'scale(1)'
-      outer.style.boxShadow  = isActive ? `0 6px 22px ${activeColor}77` : `0 2px 10px ${activeColor}55`
-      inner.style.background = isActive ? activeColor : (i === 0 ? activeColor : i === valid.length-1 ? '#ef4444' : '#f1f5f9')
-      inner.style.color      = isActive ? '#fff' : (i === 0 || i === valid.length-1 ? '#fff' : activeColor)
+      outer.style.transform  = isActive ? 'scale(1.2) translateY(-4px)' : 'scale(1)'
+      outer.style.boxShadow  = isActive ? `0 12px 24px ${activeColor}66, 0 4px 8px rgba(0,0,0,0.1)` : `0 4px 14px ${activeColor}40, 0 1px 3px rgba(0,0,0,0.1)`
+      outer.style.borderColor = isActive ? '#fff' : activeColor
+      outer.style.background = isActive ? activeColor : '#fff'
+      inner.style.background = isActive ? '#fff' : (i === 0 ? activeColor : i === valid.length-1 ? '#ef4444' : '#f8fafc')
+      inner.style.color      = isActive ? activeColor : (i === 0 || i === valid.length-1 ? '#fff' : activeColor)
     })
   }, [activePlace, activeColor, places])
 
@@ -252,34 +250,23 @@ function GoongMap({ places, activePlace, dayIndex = 0 }) {
   if (!valid.length) return null
 
   return (
-    <div className="goong-map-shell" style={{ borderRadius:16, overflow:'hidden', border:'1px solid #e2e8f0', boxShadow:'0 2px 16px rgba(0,0,0,0.07)', display:'flex', flexDirection:'column', height:'100%', width:'100%', maxWidth:'100%', boxSizing:'border-box' }}>
-      <div style={{ padding:'10px 16px', background:'#fafafa', borderBottom:'1px solid #f1f5f9', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ width:10, height:10, borderRadius:'50%', background:activeColor, display:'inline-block' }} />
-          <span style={{ fontSize:13, fontWeight:600, color:'#475569' }}>🗺️ Lộ trình ngày</span>
+    <div className="goong-map-shell" style={{ borderRadius:24, overflow:'hidden', background:'white', boxShadow:'0 8px 30px rgba(0,0,0,0.04)', display:'flex', flexDirection:'column', height:'100%', width:'100%', maxWidth:'100%', boxSizing:'border-box', border:'1px solid #f1f5f9' }}>
+      <div style={{ padding:'14px 20px', background:'white', borderBottom:'1px solid #f1f5f9', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex: 10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ width:12, height:12, borderRadius:'50%', background:activeColor, display:'inline-block', boxShadow:`0 0 0 3px ${activeColor}22` }} />
+          <span style={{ fontSize:15, fontWeight:700, color:'#0f172a', letterSpacing:'-0.3px' }}>Bản đồ lộ trình</span>
         </div>
-        <span style={{ fontSize:11, color:'#94a3b8' }}>{valid.length} điểm · Hover xem chi tiết</span>
+        <span style={{ fontSize:12, color:'#64748b', fontWeight:500, background:'#f8fafc', padding:'4px 10px', borderRadius:20 }}>{valid.length} điểm</span>
       </div>
-      <div style={{ position:'relative', minHeight:390, flex:1, width:'100%', background:'#e8edf2' }}>
+      <div style={{ position:'relative', minHeight:420, flex:1, width:'100%', background:'#f8fafc' }}>
         {!sdkReady && (
-          <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:'#94a3b8', fontSize:13 }}>
-            <span style={{ display:'inline-block', width:16, height:16, border:'2px solid #e2e8f0', borderTopColor:activeColor, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
-            Đang tải bản đồ...
+          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'#64748b', fontSize:14, fontWeight:500 }}>
+            <span style={{ display:'inline-block', width:24, height:24, border:'3px solid #e2e8f0', borderTopColor:activeColor, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+            Đang tải bản đồ khu vực...
           </div>
         )}
         <div ref={mapRef} style={{ height:'100%', width:'100%' }} />
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      </div>
-      <div style={{ padding:'10px 16px', background:'#fafafa', borderTop:'1px solid #f1f5f9', display:'flex', gap:4, overflowX:'auto', alignItems:'center' }}>
-        {valid.map((p, i) => (
-          <div key={i} style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-            <div style={{ width:22, height:22, borderRadius:'50%', background:i===0?activeColor:'#fff', border:`2px solid ${activeColor}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'10px', fontWeight:'800', color:i===0?'#fff':activeColor, flexShrink:0 }}>
-              {i===0?'▶':i+1}
-            </div>
-            <span style={{ fontSize:11, color:'#475569', maxWidth:88, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.place}</span>
-            {i < valid.length-1 && <span style={{ color:activeColor, fontSize:12, marginLeft:2, flexShrink:0 }}>→</span>}
-          </div>
-        ))}
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}} .goongjs-popup-content { border-radius: 16px !important; box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important; border: none !important; padding: 12px !important; }`}</style>
       </div>
     </div>
   )
@@ -288,166 +275,161 @@ function GoongMap({ places, activePlace, dayIndex = 0 }) {
 function PlaceModal({ item, onClose, activeColor, modalRect }) {
   if (!item) return null
 
-  const tipsArray = item.tips
+  const tipsArray = typeof item.tips === 'string'
     ? item.tips.split(/[.;]\s+/).filter(t => t.trim().length > 5)
-    : []
+    : (Array.isArray(item.tips) ? item.tips : [])
 
   return (
     <>
       <div onClick={onClose} style={{
-        position:'fixed', inset:0, background:'rgba(0,0,0,0.4)',
-        zIndex:1000, backdropFilter:'blur(2px)', animation:'fadeIn 0.2s ease',
+        position:'fixed', inset:0, background:'rgba(15, 23, 42, 0.4)',
+        zIndex:1000, backdropFilter:'blur(4px)', animation:'fadeIn 0.25s ease',
       }} />
 
       <div className="place-modal-sheet" style={{
           position:'fixed', bottom:0, left:0, right:0,
-          background:'white', borderRadius:'24px 24px 0 0',
+          background:'white',
           zIndex:1001, maxHeight:'88vh', overflowY:'auto',
-          animation:'slideUp 0.3s cubic-bezier(0.16,1,0.3,1)',
-          boxShadow:'0 -8px 40px rgba(0,0,0,0.15)',
+          animation:'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)',
+          boxShadow:'0 -20px 40px rgba(0,0,0,0.1)',
           fontFamily:"'DM Sans', sans-serif",
           '--sheet-width': `${Math.round(modalRect?.width || 700)}px`,
           '--sheet-left': `${Math.round(modalRect?.left || 16)}px`,
         }}>
-        <div style={{ display:'flex', justifyContent:'center', padding:'12px 0 0' }}>
-          <div style={{ width:40, height:4, borderRadius:999, background:'#e2e8f0' }} />
+        <div style={{ display:'flex', justifyContent:'center', padding:'16px 0 0' }}>
+          <div style={{ width:48, height:5, borderRadius:999, background:'#e2e8f0' }} />
         </div>
+        
         <button onClick={onClose} style={{
-          position:'absolute', top:16, right:16,
-          width:32, height:32, borderRadius:'50%',
-          background:'#f1f5f9', border:'none', cursor:'pointer',
-          fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', color:'#64748b',
-        }}>×</button>
+          position:'absolute', top:20, right:20,
+          width:36, height:36, borderRadius:'50%',
+          background:'#f8fafc', border:'1px solid #e2e8f0', cursor:'pointer',
+          fontSize:20, display:'flex', alignItems:'center', justifyContent:'center', color:'#64748b',
+          transition:'all 0.2s', boxShadow:'0 2px 4px rgba(0,0,0,0.02)'
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a' }}
+        onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#64748b' }}
+        >×</button>
 
-        <div style={{ padding:'24px 24px 48px' }}>
-
-          {/* Title + cost */}
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10, marginBottom:4, paddingRight:42 }}>
-            <h2 style={{ fontFamily:"'Fraunces', serif", fontSize:26, fontWeight:600, color:'#0f172a', margin:0, lineHeight:1.2 }}>
+        <div style={{ padding:'28px 28px 48px' }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16, marginBottom:6, paddingRight:48 }}>
+            <h2 style={{ fontFamily:"'Fraunces', serif", fontSize:32, fontWeight:600, color:'#0f172a', margin:0, lineHeight:1.15, letterSpacing:'-0.5px' }}>
               {item.place}
             </h2>
             {item.estimated_cost && (
-              <span style={{ fontSize:12, padding:'2px 8px', borderRadius:6, background:'#f0fdf4', color:'#16a34a', fontWeight:600, whiteSpace:'nowrap', flexShrink:0 }}>
+              <span style={{ fontSize:13, padding:'6px 12px', borderRadius:10, background:'#ecfdf5', color:'#059669', fontWeight:700, whiteSpace:'nowrap', flexShrink:0, border:'1px solid #a7f3d0' }}>
                 {item.estimated_cost}
               </span>
             )}
           </div>
 
-          {/* Address */}
           {item.address && (
-            <div style={{ fontSize:13, color:'#94a3b8', marginBottom:16 }}>📍 {item.address}</div>
-          )}
-
-          {/* Description */}
-          {item.description && (
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:'#0f172a', marginBottom:8 }}>Về địa điểm này</div>
-              <p style={{ fontSize:14, color:'#64748b', lineHeight:1.75, margin:0 }}>{item.description}</p>
+            <div style={{ fontSize:14, color:'#64748b', marginBottom:24, display:'flex', alignItems:'center', gap:6 }}>
+              <span style={{ fontSize: 16 }}>📍</span> {item.address}
             </div>
           )}
 
-          {/* Highlights */}
+          {item.description && (
+            <div style={{ marginBottom:28, background:'#f8fafc', padding:'20px', borderRadius:20 }}>
+              <p style={{ fontSize:15, color:'#475569', lineHeight:1.8, margin:0 }}>{item.description}</p>
+            </div>
+          )}
+
           {item.highlights?.length > 0 && (
-            <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:'#0f172a', marginBottom:10 }}>✨ Điểm nổi bật</div>
-              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <div style={{ marginBottom:28 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:'#0f172a', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize: 20 }}>✨</span> Điểm nổi bật
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
                 {item.highlights.map((h, i) => (
-                  <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
-                    <div style={{ width:22, height:22, borderRadius:'50%', background:activeColor, color:'white', fontSize:11, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+                  <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 16px', background:'white', border:'1px solid #f1f5f9', borderRadius:16, boxShadow:'0 2px 8px rgba(0,0,0,0.02)' }}>
+                    <div style={{ width:24, height:24, borderRadius:'50%', background:activeColor, color:'white', fontSize:12, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2, boxShadow:`0 2px 6px ${activeColor}40` }}>
                       {i+1}
                     </div>
-                    <span style={{ fontSize:14, color:'#374151', lineHeight:1.6 }}>{h}</span>
+                    <span style={{ fontSize:15, color:'#334155', lineHeight:1.6 }}>{h}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Tips */}
           {tipsArray.length > 0 && (
-            <div style={{ background:'#fffbeb', borderRadius:14, padding:'14px 16px', marginBottom:20, border:'1px solid #fde68a' }}>
-              <div style={{ fontSize:13, fontWeight:700, color:'#92400e', marginBottom:10 }}>💡 Lưu ý hữu ích</div>
-              <ul style={{ margin:0, padding:'0 0 0 16px', display:'flex', flexDirection:'column', gap:6 }}>
+            <div style={{ background:'#fffbeb', borderRadius:20, padding:'20px', marginBottom:28, border:'1px solid #fef3c7' }}>
+              <div style={{ fontSize:15, fontWeight:700, color:'#b45309', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize: 20 }}>💡</span> Mẹo du lịch
+              </div>
+              <ul style={{ margin:0, padding:'0 0 0 20px', display:'flex', flexDirection:'column', gap:10 }}>
                 {tipsArray.map((tip, i) => (
-                  <li key={i} style={{ fontSize:13, color:'#78350f', lineHeight:1.6 }}>{tip}</li>
+                  <li key={i} style={{ fontSize:14, color:'#92400e', lineHeight:1.6, paddingLeft:4 }}>{tip}</li>
                 ))}
               </ul>
             </div>
           )}
 
-          {/* Best for + Nearby */}
           {(item.best_for || item.nearby) && (
-            <div style={{ display:'grid', gridTemplateColumns: item.best_for && item.nearby ? '1fr 1fr' : '1fr', gap:12, marginBottom:20 }}>
+            <div style={{ display:'grid', gridTemplateColumns: item.best_for && item.nearby ? '1fr 1fr' : '1fr', gap:16, marginBottom:28 }}>
               {item.best_for && (
-                <div style={{ background:'#f0f9ff', borderRadius:12, padding:'12px 14px' }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:'#0369a1', marginBottom:4 }}>👥 Phù hợp cho</div>
-                  <div style={{ fontSize:13, color:'#0f172a', lineHeight:1.5 }}>{item.best_for}</div>
+                <div style={{ background:'#f0f9ff', border:'1px solid #e0f2fe', borderRadius:20, padding:'16px' }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#0284c7', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>👥 Phù hợp cho</div>
+                  <div style={{ fontSize:14, color:'#0f172a', lineHeight:1.6 }}>{item.best_for}</div>
                 </div>
               )}
               {item.nearby && (
-                <div style={{ background:'#f0fdf4', borderRadius:12, padding:'12px 14px' }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:'#16a34a', marginBottom:4 }}>📍 Lân cận</div>
-                  <div style={{ fontSize:13, color:'#0f172a', lineHeight:1.5 }}>{item.nearby}</div>
+                <div style={{ background:'#fdf4ff', border:'1px solid #fae8ff', borderRadius:20, padding:'16px' }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#c026d3', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>🗺 Lân cận</div>
+                  <div style={{ fontSize:14, color:'#0f172a', lineHeight:1.6 }}>{item.nearby}</div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Info rows */}
-          <div style={{ borderTop:'1px solid #f1f5f9' }}>
+          <div style={{ borderTop:'1px solid #f1f5f9', paddingTop:12 }}>
             {[
-              item.opening_hours     && { icon:'🕐', label:'Giờ mở cửa',        value:item.opening_hours,     color:null },
+              item.opening_hours     && { icon:'🕐', label:'Giờ mở cửa',        value:item.opening_hours,     color:'#0f172a' },
               item.entrance_fee      && { icon:'🎫', label:'Vé vào cửa',         value:item.entrance_fee,      color:'#6366f1' },
-              item.duration          && { icon:'⏱',  label:'Thời gian',          value:item.duration,          color:null },
-              item.transport_to_next && { icon:'🗺️', label:'Di chuyển tiếp theo',value:item.transport_to_next, color:'#0369a1' },
-            ].filter(Boolean).map((row, i, arr) => (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:i < arr.length-1 ? '1px solid #f8fafc' : 'none' }}>
-                <span style={{ fontSize:18, width:24, textAlign:'center', flexShrink:0 }}>{row.icon}</span>
+              item.duration          && { icon:'⏱', label:'Thời gian dự kiến',value:item.duration,          color:'#0f172a' },
+              item.transport_to_next && { icon:'🚗', label:'Di chuyển tiếp theo',value:item.transport_to_next, color:'#0369a1' },
+            ].filter(Boolean).map((row, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 0', borderBottom:'1px solid #f8fafc' }}>
+                <div style={{ width:40, height:40, borderRadius:12, background:'#f8fafc', border:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
+                  {row.icon}
+                </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:11, color:'#94a3b8' }}>{row.label}</div>
-                  <div style={{ fontSize:13, color:row.color||'#0f172a', fontWeight:500, marginTop:1 }}>{row.value}</div>
+                  <div style={{ fontSize:12, color:'#64748b', fontWeight:500 }}>{row.label}</div>
+                  <div style={{ fontSize:14, color:row.color, fontWeight:600, marginTop:2 }}>{row.value}</div>
                 </div>
               </div>
             ))}
 
             {item.address && (
-              <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid #f8fafc', cursor:'copy' }}
+              <div className="copy-address-row" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 0', borderBottom:'1px solid #f8fafc', cursor:'pointer', transition:'opacity 0.2s' }}
                 onClick={() => navigator.clipboard?.writeText(item.address)}>
-                <span style={{ fontSize:18, width:24, textAlign:'center', flexShrink:0 }}>📋</span>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:11, color:'#94a3b8' }}>Sao chép địa chỉ</div>
-                  <div style={{ fontSize:13, color:'#6366f1', fontWeight:500, marginTop:1 }}>{item.address}</div>
+                <div style={{ width:40, height:40, borderRadius:12, background:'#f8fafc', border:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
+                  📋
                 </div>
-                <span style={{ fontSize:11, color:'#94a3b8', background:'#f8fafc', padding:'2px 8px', borderRadius:6, flexShrink:0 }}>copy</span>
-              </div>
-            )}
-
-            {item.website && (
-              <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0' }}>
-                <span style={{ fontSize:18, width:24, textAlign:'center', flexShrink:0 }}>🌐</span>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:11, color:'#94a3b8' }}>Website</div>
-                  <a href={item.website} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize:13, color:'#6366f1', fontWeight:500, textDecoration:'none' }}>
-                    {item.website.replace(/^https?:\/\//, '')}
-                  </a>
+                  <div style={{ fontSize:12, color:'#64748b', fontWeight:500 }}>Sao chép địa chỉ</div>
+                  <div style={{ fontSize:14, color:'#6366f1', fontWeight:600, marginTop:2 }}>{item.address}</div>
                 </div>
+                <span style={{ fontSize:11, color:'#64748b', background:'#f1f5f9', padding:'4px 10px', borderRadius:8, flexShrink:0, fontWeight:600 }}>COPY</span>
               </div>
             )}
           </div>
 
-          {/* Direction button */}
           {item.address && (
             <a href={`https://maps.google.com/?q=${encodeURIComponent(item.address)}`}
               target="_blank" rel="noopener noreferrer"
               style={{
-                display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                display:'flex', alignItems:'center', justifyContent:'center', gap:10,
                 background:activeColor, color:'white',
-                padding:'14px', borderRadius:14, marginTop:20,
-                textDecoration:'none', fontSize:14, fontWeight:600,
-                boxShadow:`0 4px 16px ${activeColor}44`,
-              }}>
-              📍 Chỉ đường
+                padding:'16px', borderRadius:16, marginTop:28,
+                textDecoration:'none', fontSize:16, fontWeight:700,
+                boxShadow:`0 8px 20px ${activeColor}40`, transition:'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 12px 24px ${activeColor}60` }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 8px 20px ${activeColor}40` }}
+            >
+              📍 Mở trên Google Maps
             </a>
           )}
         </div>
@@ -456,6 +438,7 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
       <style>{`
         @keyframes fadeIn  { from { opacity:0 }            to { opacity:1 } }
         @keyframes slideUp { from { transform:translateY(100%) } to { transform:translateY(0) } }
+        .copy-address-row:hover { opacity: 0.7; }
         @media(max-width:1023px){
           .place-modal-sheet{
             left: 0 !important;
@@ -463,7 +446,7 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
             width: auto !important;
             transform: none !important;
             bottom: 0 !important;
-            border-radius: 24px 24px 0 0 !important;
+            border-radius: 32px 32px 0 0 !important;
           }
         }
         @media(min-width:1024px){
@@ -472,15 +455,15 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
             left: var(--sheet-left) !important;
             right: auto !important;
             transform: none;
-            border-radius: 24px;
-            bottom: 20px;
+            border-radius: 32px;
+            bottom: 24px;
           }
         }
       `}</style>
     </>
   )
 }
-// ── Single Day View ──────────────────────────────────────────────────────────
+
 function DayView({ day, dayIndex, accommodation }) {
   const [activePlace, setActivePlace] = useState(null)
   const [modalItem, setModalItem] = useState(null)
@@ -503,8 +486,7 @@ function DayView({ day, dayIndex, accommodation }) {
   const finalMapPlaces = mapPlaces.length > 0 ? mapPlaces : fallbackAccommodationPlaces
 
   return (
-    <div>
-      {/* Place Detail Modal */}
+    <div style={{ marginBottom: 40 }}>
       {modalItem && (
         <PlaceModal
           item={modalItem}
@@ -515,74 +497,77 @@ function DayView({ day, dayIndex, accommodation }) {
       )}
 
       {/* Day header */}
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, flexWrap:'wrap' }}>
-        <div style={{ width:36, height:36, background:activeColor, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, fontWeight:800, color:'white', flexShrink:0 }}>
-          {day.day}
+      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:20, flexWrap:'wrap', paddingLeft: 8 }}>
+        <div style={{ width:48, height:48, background:`linear-gradient(135deg, ${activeColor}, ${activeColor}dd)`, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:800, color:'white', flexShrink:0, boxShadow:`0 8px 20px ${activeColor}40` }}>
+          {String(day.day || '').replace(/[^\d]/g, '') || dayIndex + 1}
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:16, fontWeight:700, color:'#0f172a', fontFamily:"'Fraunces', serif" }}>{day.title}</div>
-          {day.weather && <div style={{ fontSize:12, color:'#94a3b8', marginTop:2 }}>🌡️ {day.weather}</div>}
+          <div style={{ fontSize:13, fontWeight:700, color:activeColor, textTransform:'uppercase', letterSpacing:'1px', marginBottom:2 }}>NGÀY {String(day.day || '').replace(/[^\d]/g, '') || dayIndex + 1}</div>
+          <div style={{ fontSize:26, fontWeight:600, color:'#0f172a', fontFamily:"'Fraunces', serif", lineHeight:1.2, letterSpacing:'-0.5px' }}>{day.title}</div>
+          {day.weather && <div style={{ fontSize:14, color:'#64748b', marginTop:4, fontWeight: 500 }}>🌤️ {day.weather}</div>}
         </div>
       </div>
 
-        <div ref={dayDetailRef} className="day-detail-grid">
-        {/* Map: mobile ở trên, desktop ở bên phải */}
+      <div ref={dayDetailRef} className="day-detail-grid">
         <div className="day-map-col">
           <GoongMap key={`${dayIndex}-${activePlace}`} places={finalMapPlaces} activePlace={activePlace} dayIndex={dayIndex} />
         </div>
 
-        {/* Schedule: mobile ở dưới, desktop ở bên trái */}
-          <div className="day-schedule-col" style={{ background:'white', borderRadius:16, border:'1px solid #f1f5f9', padding:'14px', boxShadow:'0 2px 8px rgba(0,0,0,0.03)' }}>
-            {day.schedule?.map((item, idx) => {
-          const placeIcon = getPlaceIcon(item)
-          const hasCoords = hasValidCoords(item)
-          const placeIdx = hasCoords ? finalMapPlaces.findIndex(p => p.place === item.place) : -1
-          const isActive = placeIdx !== -1 && activePlace === placeIdx
+        <div className="day-schedule-col">
+          {day.schedule?.map((item, idx) => {
+            const placeIcon = getPlaceIcon(item)
+            const hasCoords = hasValidCoords(item)
+            const placeIdx = hasCoords ? finalMapPlaces.findIndex(p => p.place === item.place) : -1
+            const isActive = placeIdx !== -1 && activePlace === placeIdx
 
             const openModal = () => {
               const rect = dayDetailRef.current?.getBoundingClientRect?.()
               if (rect) setModalRect({ left: rect.left, width: rect.width })
               setModalItem({ ...item })
             }
-          const handleMapClick = (e) => {
-            e.stopPropagation()
-            if (placeIdx !== -1) setActivePlace(isActive ? null : placeIdx)
-          }
+            const handleMapClick = (e) => {
+              e.stopPropagation()
+              if (placeIdx !== -1) setActivePlace(isActive ? null : placeIdx)
+            }
 
-          return (
+            return (
               <div key={idx}
-                className="schedule-item-row"
+                className={`schedule-item-row ${isActive ? 'active' : ''}`}
                 onClick={openModal}
-                style={{ display:'grid', gridTemplateColumns:'48px minmax(0,1fr) 112px', gap:12, alignItems:'center', padding:'15px 16px', border:'1px solid '+(isActive ? '#c7d2fe' : '#e5e7eb'), borderRadius:12, marginBottom: idx < day.schedule.length-1 ? 12 : 0, cursor:'pointer', background:isActive ? '#eef2ff' : 'white', transition:'background 0.15s, border-color 0.15s, box-shadow 0.15s' }}
-                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = '#fafbff'; e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(15,23,42,0.05)' } }}
-                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none' } }}
+                style={{ 
+                  '--active-color': activeColor,
+                  '--active-bg': `${activeColor}11`,
+                }}
               >
-                {/* Time */}
-                <div className="schedule-item-icon" style={{ display:'flex', justifyContent:'center' }}>
-                  <div style={{ width:34, height:34, borderRadius:'50%', background:isActive ? '#e0e7ff' : '#f8fafc', border:'1px solid '+(isActive ? '#c7d2fe' : '#e2e8f0'), display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
+                <div className="schedule-item-icon-wrapper">
+                  {idx < day.schedule.length - 1 && <div className="schedule-connector" />}
+                  <div className={`schedule-item-icon ${isActive ? 'active-icon' : ''}`}>
                     {placeIcon}
                   </div>
                 </div>
-                {/* Content */}
-                <div className="schedule-item-content" style={{ minWidth:0 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5, flexWrap:'wrap' }}>
-                  <span style={{ fontSize:14, fontWeight:600, color:'#0f172a', lineHeight:1.35, minWidth:0, maxWidth:'100%', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.place}</span>
-                  {placeIdx !== -1 && (
-                    <span onClick={handleMapClick} style={{ fontSize:10, padding:'2px 6px', borderRadius:6, background:'#eef2ff', color:'#6366f1', fontWeight:600, cursor:'pointer' }}>
-                      #{placeIdx+1} bản đồ
-                    </span>
-                  )}
+                
+                <div className="schedule-item-content">
+                  <div style={{ fontSize:12, color:activeColor, fontWeight:700, marginBottom:4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {item.time} 
+                    {item.duration && <span style={{ color: '#94a3b8', fontWeight: 500 }}>• {item.duration}</span>}
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
+                    <span style={{ fontSize:16, fontWeight:700, color:'#0f172a', lineHeight:1.3, letterSpacing:'-0.2px' }}>{item.place}</span>
+                    {placeIdx !== -1 && (
+                      <span onClick={handleMapClick} className="map-badge">
+                        #{placeIdx+1} Bản đồ
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize:13, color:'#64748b', lineHeight: 1.5 }}>{item.address}</div>
                 </div>
-                <div style={{ fontSize:12, color:'#94a3b8', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>📍 {item.address}</div>
+                
+                <div className="schedule-item-meta">
+                  {item.estimated_cost && <div className="cost-badge">{item.estimated_cost}</div>}
+                  <div style={{ fontSize:20, color:'#cbd5e1', marginTop:8 }}>›</div>
+                </div>
               </div>
-              {/* Cost + chevron */}
-              <div className="schedule-item-meta" style={{ textAlign:'right', display:'flex', flexDirection:'column', alignItems:'flex-end', justifyContent:'center', minHeight:52, minWidth:0 }}>
-                <div style={{ fontSize:12, fontWeight:700, color:'#16a34a', lineHeight:1.3, maxWidth:'100%', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.estimated_cost}</div>
-                <div style={{ fontSize:11, color:'#94a3b8', marginTop:2, lineHeight:1.3, maxWidth:'100%', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>⏱ {item.duration}</div>
-                <div style={{ fontSize:15, color:'#cbd5e1', marginTop:5 }}>›</div>
-              </div>
-            </div>
-          )
+            )
           })}
         </div>
       </div>
@@ -590,81 +575,248 @@ function DayView({ day, dayIndex, accommodation }) {
   )
 }
 
-// ── Main Export ──────────────────────────────────────────────────────────────
-// focusDay: null = hiện tất cả, number = chỉ hiện ngày đó
 export default function ItineraryView({ itinerary, focusDay = null }) {
   if (!itinerary) return null
   const { days, accommodation, packing_list, budget_breakdown } = itinerary
 
-  const visibleDays = focusDay !== null ? [days[focusDay]].filter(Boolean) : (days || [])
+  const visibleDays = focusDay !== null ? [(days || [])[focusDay]].filter(Boolean) : (days || [])
   const focusDayIndex = focusDay !== null ? focusDay : null
 
+  const totalDays = (days || []).length
+  const totalPlaces = (days || []).reduce((sum, day) => sum + (day.schedule?.length || 0), 0)
+
   return (
-    <div style={{ fontFamily:"'DM Sans', sans-serif" }}>
+    <div style={{ fontFamily:"'DM Sans', sans-serif", maxWidth: 1200, margin: '0 auto', padding: '0 8px' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Fraunces:wght@300;600&display=swap');
-        .hotel-card{border:1px solid #f1f5f9;border-radius:14px;padding:14px 18px;transition:all 0.2s;background:white}
-        .hotel-card:hover{border-color:#e0e7ff;box-shadow:0 4px 16px rgba(99,102,241,0.06)}
-        .pack-chip{display:inline-flex;align-items:center;gap:5px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;padding:5px 10px;font-size:12px;color:#475569}
-        .budget-list{display:grid;grid-template-columns:1fr;gap:10px}
-        .budget-item{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:12px 14px;background:#f8fafc;border:1px solid #edf2f7;border-radius:12px}
-        .budget-icon{width:34px;height:34px;border-radius:10px;background:white;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1;box-shadow:0 1px 2px rgba(15,23,42,0.03)}
-        .budget-content{min-width:0;max-width:100%;padding-left:6px;text-align:right}
-        .budget-label{font-size:12px;color:#64748b;font-weight:700;line-height:1.35;margin-bottom:5px;text-align:right}
-        .budget-value{font-size:13px;font-weight:600;color:#0f172a;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;text-align:justify;text-align-last:right}
-        .day-detail-grid{display:grid;grid-template-columns:1fr;gap:12px;width:100%;max-width:100%;min-width:0}
-        .day-map-col{order:1}
-        .day-schedule-col{order:2}
-        .day-map-col,.day-schedule-col{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap');
+        
+        .premium-card {
+          background: white;
+          border-radius: 24px;
+          padding: 24px;
+          box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+          border: 1px solid #f8fafc;
+        }
+
+        .hotel-card {
+          border: 1px solid #f1f5f9;
+          border-radius: 20px;
+          padding: 20px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          background: #fdfdfd;
+        }
+        .hotel-card:hover {
+          transform: translateY(-4px);
+          border-color: #e0e7ff;
+          box-shadow: 0 12px 24px rgba(99,102,241,0.08);
+          background: white;
+        }
+
+        .pack-chip {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+          padding: 8px 14px; font-size: 13px; color: #334155; font-weight: 500;
+        }
+
+        .budget-list { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .budget-item {
+          display: grid; grid-template-columns: 44px minmax(0,1fr); gap: 14px;
+          align-items: center; padding: 14px 16px;
+          background: #f8fafc; border-radius: 16px; border: 1px solid transparent; transition: all 0.2s;
+        }
+        .budget-item:hover { background: white; border-color: #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .budget-icon {
+          width: 44px; height: 44px; border-radius: 14px; background: white;
+          display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .budget-content { min-width: 0; max-width: 100%; text-align: right; }
+        .budget-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .budget-value { font-size: 15px; font-weight: 700; color: #0f172a; }
+
+        .day-detail-grid { display: grid; grid-template-columns: 1fr; gap: 24px; width: 100%; }
+        .day-map-col { order: 1; }
+        .day-schedule-col { order: 2; display: flex; flex-direction: column; gap: 12px; }
+        
+        .schedule-item-row {
+          display: grid; grid-template-columns: 56px minmax(0,1fr) auto; gap: 16px; align-items: center;
+          padding: 16px 20px; background: white; border-radius: 20px; cursor: pointer; border: 1px solid transparent;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.02); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
+        }
+        .schedule-item-row:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(0,0,0,0.05); border-color: #e2e8f0; }
+        .schedule-item-row.active { background: var(--active-bg); border-color: var(--active-color); box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        
+        .schedule-item-icon-wrapper { position: relative; display: flex; justify-content: center; height: 100%; align-items: center; }
+        .schedule-connector { position: absolute; width: 2px; background: #e2e8f0; top: 40px; bottom: -30px; left: 50%; transform: translateX(-50%); z-index: 0; }
+        .schedule-item-icon {
+          width: 44px; height: 44px; border-radius: 50%; background: #f8fafc; border: 2px solid #e2e8f0;
+          display: flex; align-items: center; justify-content: center; font-size: 20px; position: relative; z-index: 1; transition: all 0.3s;
+        }
+        .schedule-item-icon.active-icon { background: white; border-color: var(--active-color); box-shadow: 0 0 0 4px var(--active-bg); }
+
+        .map-badge { font-size: 11px; padding: 4px 10px; border-radius: 8px; background: #f1f5f9; color: #475569; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .map-badge:hover { background: var(--active-color); color: white; }
+        
+        .cost-badge { font-size: 12px; font-weight: 700; color: #059669; background: #ecfdf5; padding: 6px 12px; border-radius: 10px; border: 1px solid #d1fae5; }
+        .schedule-item-meta { text-align: right; display: flex; flex-direction: column; alignItems: flex-end; justify-content: center; min-width: 0; }
+
         @media(min-width:1024px){
-          .day-detail-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:stretch}
-          .day-map-col,.day-schedule-col{height:100%}
-          .day-map-col{order:2}
-          .day-schedule-col{order:1}
+          .day-detail-grid { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 32px; align-items: stretch; }
+          .day-map-col { order: 2; position: sticky; top: 24px; height: calc(100vh - 48px); }
+          .day-schedule-col { order: 1; padding-bottom: 40px; }
         }
         @media(max-width:900px){
-          .day-detail-grid{gap:8px}
-          .day-schedule-col{
-            padding:clamp(5px,1.5vw,8px)!important;
-            overflow-x:visible;
-            width:100%;
-            max-width:100%;
-            min-width:0;
-            box-sizing:border-box;
-            border-radius:clamp(12px,4vw,16px) !important;
-          }
-          .schedule-item-row{
-            display:flex !important;
-            align-items:center !important;
-            gap:clamp(6px,2vw,10px) !important;
-            padding:clamp(7px,2.1vw,10px) !important;
-            width:100% !important;
-            max-width:100% !important;
-            box-sizing:border-box !important;
-            margin-left:0 !important;
-            margin-right:0 !important;
-            overflow:hidden !important;
-            border-width:1px !important;
-            border-radius:clamp(10px,3.6vw,14px) !important;
-            box-shadow:none !important;
-          }
-          .schedule-item-icon{flex:0 0 clamp(30px,8.5vw,36px)}
-          .schedule-item-content{flex:1 1 auto;min-width:0}
-          .schedule-item-meta{flex:0 0 clamp(64px,20vw,76px);min-width:clamp(64px,20vw,76px)}
-          .schedule-item-row *{min-width:0}
-          .schedule-item-meta{padding-left:2px}
-          .bottom-grid{grid-template-columns:1fr!important}
-          .accommodation-grid{grid-template-columns:1fr!important}
-          .budget-item{grid-template-columns:30px minmax(0,1fr);padding:11px 12px}
-          .budget-icon{width:30px;height:30px;font-size:16px}
+          .schedule-item-row { grid-template-columns: 48px minmax(0,1fr) auto; gap: 12px; padding: 16px; }
+          .schedule-item-icon { width: 38px; height: 38px; font-size: 18px; }
+          .schedule-connector { top: 38px; bottom: -28px; }
+          .bottom-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
-      {/* Days */}
-      <div style={{ display:'flex', flexDirection:'column', gap:28 }}>
+      {/* TỔNG QUAN CHUYẾN ĐI - PREMIUM BENTO STYLE */}
+      {focusDay === null && totalDays > 0 && (
+        <div className="overview-bento" style={{ marginBottom: 48 }}>
+          <style>{`
+            .bento-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            
+            /* --- HERO CARD TÂN TIẾN --- */
+            .bento-hero {
+              grid-column: 1 / -1; 
+              background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); 
+              border-radius: 32px; 
+              padding: 48px;
+              color: white; 
+              position: relative; 
+              overflow: hidden; 
+              box-shadow: 0 24px 50px rgba(15,23,42,0.15);
+              min-height: 220px;
+              display: flex;
+              align-items: center;
+            }
+            
+            /* Hiệu ứng ánh sáng (Glowing Orbs) */
+            .hero-orb-1 { position: absolute; top: -50%; left: -10%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 60%); border-radius: 50%; filter: blur(40px); animation: floatOrb 8s infinite ease-in-out alternate; }
+            .hero-orb-2 { position: absolute; bottom: -50%; right: -5%; width: 350px; height: 350px; background: radial-gradient(circle, rgba(236,72,153,0.3) 0%, transparent 60%); border-radius: 50%; filter: blur(40px); animation: floatOrb 10s infinite ease-in-out alternate-reverse; }
+            
+            @keyframes floatOrb {
+              0% { transform: translate(0, 0) scale(1); }
+              100% { transform: translate(30px, 40px) scale(1.1); }
+            }
+
+            /* --- STAT CARDS HIỆN ĐẠI --- */
+            .bento-stat {
+              background: white; 
+              border-radius: 28px; 
+              padding: 24px; 
+              border: 1px solid #f1f5f9;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.02); 
+              display: flex; 
+              align-items: center; 
+              gap: 20px;
+              transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+              cursor: pointer;
+              position: relative;
+              overflow: hidden;
+              z-index: 1;
+            }
+            .bento-stat::after {
+               content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent, var(--stat-glow)); opacity: 0; transition: opacity 0.4s; z-index: -1;
+            }
+            .bento-stat:hover { 
+              transform: translateY(-8px); 
+              box-shadow: 0 20px 40px rgba(0,0,0,0.08); 
+              border-color: transparent; 
+            }
+            .bento-stat:hover::after { opacity: 0.08; }
+
+            .bento-icon-box { 
+              width: 64px; height: 64px; border-radius: 20px; 
+              display: flex; align-items: center; justify-content: center; 
+              font-size: 30px; flex-shrink: 0; 
+              background: var(--icon-bg); color: var(--icon-color);
+              box-shadow: 0 8px 16px var(--icon-shadow);
+              transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            .bento-stat:hover .bento-icon-box {
+              transform: scale(1.1) rotate(-8deg);
+            }
+
+            @media (max-width: 900px) {
+              .bento-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+              .bento-stat:last-child { grid-column: 1 / -1; }
+            }
+            @media (max-width: 600px) {
+              .bento-grid { grid-template-columns: 1fr; gap: 16px; }
+              .bento-hero { padding: 32px 24px; border-radius: 28px; }
+              .bento-hero h2 { font-size: 32px !important; }
+              .bento-stat { padding: 20px; border-radius: 24px; gap: 16px; }
+              .bento-icon-box { width: 56px; height: 56px; font-size: 26px; }
+            }
+          `}</style>
+
+          <div className="bento-grid">
+            {/* HERO CARD */}
+            <div className="bento-hero">
+              <div className="hero-orb-1" />
+              <div className="hero-orb-2" />
+              
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ 
+                  display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', 
+                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                  borderRadius: 999, fontSize: 13, fontWeight: 700, color: '#e0e7ff', width: 'max-content', letterSpacing: '1px' 
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 12px #34d399' }} />
+                  TỔNG QUAN HÀNH TRÌNH
+                </div>
+                <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 'clamp(36px, 4vw, 46px)', fontWeight: 600, margin: 0, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+                  Sẵn sàng cho chuyến đi<br/>
+                  <span style={{ background: 'linear-gradient(to right, #a5b4fc, #f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', marginTop: 4 }}>
+                    tuyệt vời tiếp theo ✨
+                  </span>
+                </h2>
+              </div>
+            </div>
+
+            {/* STAT CARDS */}
+            <div className="bento-stat" style={{ '--icon-bg': '#eef2ff', '--icon-color': '#4f46e5', '--icon-shadow': 'rgba(79,70,229,0.2)', '--stat-glow': '#4f46e5' }}>
+              <div className="bento-icon-box">⏳</div>
+              <div>
+                <div style={{ fontSize: 13, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Thời gian</div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: '#0f172a', lineHeight: 1, letterSpacing: '-0.5px' }}>
+                  {totalDays} <span style={{ fontSize: 16, fontWeight: 600, color: '#94a3b8', letterSpacing: '0' }}>Ngày</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bento-stat" style={{ '--icon-bg': '#ecfdf5', '--icon-color': '#059669', '--icon-shadow': 'rgba(5,150,105,0.2)', '--stat-glow': '#059669' }}>
+              <div className="bento-icon-box">📍</div>
+              <div>
+                <div style={{ fontSize: 13, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Khám phá</div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: '#0f172a', lineHeight: 1, letterSpacing: '-0.5px' }}>
+                  {totalPlaces} <span style={{ fontSize: 16, fontWeight: 600, color: '#94a3b8', letterSpacing: '0' }}>Điểm đến</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bento-stat" style={{ '--icon-bg': '#fffbeb', '--icon-color': '#d97706', '--icon-shadow': 'rgba(217,119,6,0.2)', '--stat-glow': '#d97706' }}>
+              <div className="bento-icon-box">🌟</div>
+              <div>
+                <div style={{ fontSize: 13, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Trải nghiệm</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', lineHeight: 1.2, letterSpacing: '-0.3px' }}>
+                  Phong phú
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DANH SÁCH CÁC NGÀY */}
+      <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
         {visibleDays.map((day, i) => (
           <DayView
-            key={day.day}
+            key={day.day || i}
             day={day}
             dayIndex={focusDayIndex !== null ? focusDayIndex : i}
             accommodation={accommodation}
@@ -672,42 +824,38 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
         ))}
       </div>
 
-      {/* Budget + Packing — chỉ hiện khi xem tất cả */}
+      {/* DỰ TOÁN NGÂN SÁCH & HÀNH TRANG */}
       {focusDay === null && (
-        <div className="bottom-grid" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)', gap:16, marginTop:24, alignItems:'start' }}>
+        <div className="bottom-grid" style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:24, marginTop:40, alignItems:'start', marginBottom: 60 }}>
           {budget_breakdown && (
-  <div style={{
-    background: 'white', borderRadius: 16,
-    border: '1px solid #f1f5f9', padding: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-  }}>
-    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-      💵 Phân bổ ngân sách
-    </h3>
-    <div className="budget-list">
-      {Object.entries(budget_breakdown).map(([key, val]) => {
-        const label = BUDGET_KEYS[key] || '📌 ' + key.replace(/_/g, ' ')
-        const icon  = label.match(/^([\u{1F000}-\u{1FFFF}]|[\u2600-\u27BF])/u)?.[0] || '📌'
-        const text  = label.replace(/^([\u{1F000}-\u{1FFFF}]|[\u2600-\u27BF])\s*/u, '')
-        return (
-          <div key={key} className="budget-item">
-            <span className="budget-icon">{icon}</span>
-            <div className="budget-content">
-              <div className="budget-label">{text}</div>
-              <div className="budget-value">{formatBudgetValue(val)}</div>
+            <div className="premium-card">
+              <h3 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>
+                💵 Dự toán ngân sách
+              </h3>
+              <div className="budget-list">
+                {Object.entries(budget_breakdown).map(([key, val]) => {
+                  const label = BUDGET_KEYS[key] || '📌 ' + key.replace(/_/g, ' ')
+                  const icon  = label.match(/^([\u{1F000}-\u{1FFFF}]|[\u2600-\u27BF])/u)?.[0] || '📌'
+                  const text  = label.replace(/^([\u{1F000}-\u{1FFFF}]|[\u2600-\u27BF])\s*/u, '')
+                  return (
+                    <div key={key} className="budget-item">
+                      <span className="budget-icon">{icon}</span>
+                      <div className="budget-content">
+                        <div className="budget-label">{text}</div>
+                        <div className="budget-value">{formatBudgetValue(val)}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        )
-      })}
-    </div>
-  </div>
-)}
+          )}
           {packing_list?.length > 0 && (
-            <div style={{ background:'white', borderRadius:16, border:'1px solid #f1f5f9', padding:'20px', boxShadow:'0 2px 8px rgba(0,0,0,0.03)' }}>
-              <h3 style={{ fontSize:14, fontWeight:700, color:'#0f172a', margin:'0 0 14px 0' }}>🎒 Đồ cần mang</h3>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+            <div className="premium-card">
+              <h3 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>🎒 Hành trang cần thiết</h3>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:10 }}>
                 {packing_list.map((item,i) => (
-                  <span key={i} className="pack-chip"><span style={{ color:'#16a34a', fontWeight:600 }}>✓</span> {item}</span>
+                  <span key={i} className="pack-chip"><span style={{ color:'#059669', fontWeight:800 }}>✓</span> {item}</span>
                 ))}
               </div>
             </div>
@@ -715,17 +863,17 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
         </div>
       )}
 
-      {/* Accommodation — chỉ hiện khi xem tất cả */}
+      {/* GỢI Ý LƯU TRÚ */}
       {focusDay === null && accommodation?.length > 0 && (
-        <div style={{ background:'white', borderRadius:16, border:'1px solid #f1f5f9', padding:'20px', boxShadow:'0 2px 8px rgba(0,0,0,0.03)', marginTop:16 }}>
-          <h3 style={{ fontSize:14, fontWeight:700, color:'#0f172a', margin:'0 0 14px 0' }}>🏨 Chỗ ở gợi ý</h3>
-          <div className="accommodation-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:10 }}>
+        <div className="premium-card" style={{ marginBottom: 60 }}>
+          <h3 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>🏨 Gợi ý lưu trú</h3>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:20 }}>
             {accommodation.map((h,i) => (
               <div key={i} className="hotel-card">
-                <div style={{ fontWeight:600, fontSize:13, color:'#0f172a', marginBottom:5 }}>{h.name}</div>
-                <div style={{ fontSize:11, color:'#94a3b8', marginBottom:7 }}>📍 {h.area}</div>
-                <div style={{ fontSize:12, fontWeight:600, color:'#16a34a', padding:'3px 8px', background:'#f0fdf4', borderRadius:6, display:'inline-block', marginBottom:7 }}>{h.price_range}</div>
-                <div style={{ fontSize:11, color:'#94a3b8', lineHeight:1.6 }}>{h.why}</div>
+                <div style={{ fontWeight:700, fontSize:16, color:'#0f172a', marginBottom:8, letterSpacing:'-0.2px' }}>{h.name}</div>
+                <div style={{ fontSize:13, color:'#64748b', marginBottom:12, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{fontSize:16}}>📍</span> {h.area}</div>
+                <div style={{ fontSize:14, fontWeight:700, color:'#059669', padding:'6px 12px', background:'#ecfdf5', borderRadius:8, display:'inline-block', marginBottom:12, border:'1px solid #d1fae5' }}>{h.price_range}</div>
+                <div style={{ fontSize:13, color:'#475569', lineHeight:1.6 }}>{h.why}</div>
               </div>
             ))}
           </div>
