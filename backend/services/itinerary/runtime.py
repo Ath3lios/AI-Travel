@@ -34,10 +34,17 @@ else:
     genai.configure(api_key=settings.gemini_api_key)
     client = None
 
+GEMINI_MODEL    = getattr(settings, "gemini_model", "gemini-2.5-flash") or "gemini-2.5-flash"
+GEMINI_FALLBACK_MODEL = getattr(settings, "gemini_fallback_model", "gemini-2.5-flash-lite") or ""
+GEMINI_MODELS = tuple(dict.fromkeys(
+    model.strip()
+    for model in (GEMINI_MODEL, GEMINI_FALLBACK_MODEL)
+    if model and model.strip()
+))
 OPENWEATHER_KEY = getattr(settings, "openweather_api_key", "")
-GOONG_KEY = getattr(settings, "goong_api_key", "")
+GOONG_KEY       = getattr(settings, "goong_api_key", "")
 DEFAULT_TIMEOUT = 5
-GOONG_TIMEOUT = 6
+GOONG_TIMEOUT   = 6
 
 HTTP = requests.Session()
 DB_CONTEXT: ContextVar[Session | None] = ContextVar("db_context", default=None)

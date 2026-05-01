@@ -47,11 +47,29 @@ function TripListItem({ trip, onClick, onDelete, index }) {
         height: 52,
         borderRadius: 12,
         flexShrink: 0,
-        background: imgUrl
-          ? `url(${imgUrl}) center/cover`
-          : getAccentGradient(trip.destination),
+        overflow: 'hidden',
+        background: getAccentGradient(trip.destination),
         boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
-      }} />
+        position: 'relative',
+      }}>
+        {imgUrl && (
+          <img
+            key={imgUrl}
+            src={imgUrl}
+            alt={trip.destination}
+            referrerPolicy="no-referrer"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+            onLoad={(e) => { e.currentTarget.style.display = 'block' }}
+          />
+        )}
+      </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{

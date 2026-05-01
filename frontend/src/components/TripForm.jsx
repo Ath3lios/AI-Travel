@@ -309,7 +309,7 @@ export default function TripForm({ onTripCreated, editTrip }) {
               <div style={{ height: '100%', background: 'linear-gradient(90deg, #6366f1, #a855f7)', borderRadius: 999, animation: 'progressBar 25s ease forwards' }} />
             </div>
             <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 8, textAlign: 'center' }}>
-              Thường mất 15 - 30 giây ⏱
+              Vui lòng chờ trong vài giây ⏱
             </p>
           </div>
         </div>

@@ -130,6 +130,18 @@ function getPlaceIcon(item) {
   return bestIcon
 }
 
+function formatBudgetValue(value) {
+  if (value == null) return ''
+  if (typeof value === 'string' || typeof value === 'number') return String(value)
+  if (Array.isArray(value)) return value.filter(Boolean).join('\n')
+  if (typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, val]) => `${key.replace(/_/g, ' ')}: ${val}`)
+      .join('\n')
+  }
+  return String(value)
+}
+
 let _goongLoadPromise = null
 
 function loadGoongSDK() {
@@ -594,8 +606,12 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
         .hotel-card{border:1px solid #f1f5f9;border-radius:14px;padding:14px 18px;transition:all 0.2s;background:white}
         .hotel-card:hover{border-color:#e0e7ff;box-shadow:0 4px 16px rgba(99,102,241,0.06)}
         .pack-chip{display:inline-flex;align-items:center;gap:5px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;padding:5px 10px;font-size:12px;color:#475569}
-        .budget-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #f8fafc}
-        .budget-row:last-child{border-bottom:none}
+        .budget-list{display:grid;grid-template-columns:1fr;gap:10px}
+        .budget-item{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:12px 14px;background:#f8fafc;border:1px solid #edf2f7;border-radius:12px}
+        .budget-icon{width:34px;height:34px;border-radius:10px;background:white;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1;box-shadow:0 1px 2px rgba(15,23,42,0.03)}
+        .budget-content{min-width:0;max-width:100%;padding-left:6px;text-align:right}
+        .budget-label{font-size:12px;color:#64748b;font-weight:700;line-height:1.35;margin-bottom:5px;text-align:right}
+        .budget-value{font-size:13px;font-weight:600;color:#0f172a;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;text-align:justify;text-align-last:right}
         .day-detail-grid{display:grid;grid-template-columns:1fr;gap:12px;width:100%;max-width:100%;min-width:0}
         .day-map-col{order:1}
         .day-schedule-col{order:2}
@@ -639,6 +655,8 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
           .schedule-item-meta{padding-left:2px}
           .bottom-grid{grid-template-columns:1fr!important}
           .accommodation-grid{grid-template-columns:1fr!important}
+          .budget-item{grid-template-columns:30px minmax(0,1fr);padding:11px 12px}
+          .budget-icon{width:30px;height:30px;font-size:16px}
         }
       `}</style>
 
@@ -656,18 +674,34 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
 
       {/* Budget + Packing — chỉ hiện khi xem tất cả */}
       {focusDay === null && (
-        <div className="bottom-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginTop:24 }}>
+        <div className="bottom-grid" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)', gap:16, marginTop:24, alignItems:'start' }}>
           {budget_breakdown && (
-            <div style={{ background:'white', borderRadius:16, border:'1px solid #f1f5f9', padding:'20px', boxShadow:'0 2px 8px rgba(0,0,0,0.03)' }}>
-              <h3 style={{ fontSize:14, fontWeight:700, color:'#0f172a', margin:'0 0 14px 0' }}>💵 Phân bổ ngân sách</h3>
-              {Object.entries(budget_breakdown).map(([key, val]) => (
-                <div key={key} className="budget-row">
-                  <span style={{ fontSize:13, color:'#475569' }}>{BUDGET_KEYS[key] || '📌 '+key.replace(/_/g,' ')}</span>
-                  <span style={{ fontSize:13, fontWeight:600, color:'#0f172a' }}>{val}</span>
-                </div>
-              ))}
+  <div style={{
+    background: 'white', borderRadius: 16,
+    border: '1px solid #f1f5f9', padding: '20px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+  }}>
+    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+      💵 Phân bổ ngân sách
+    </h3>
+    <div className="budget-list">
+      {Object.entries(budget_breakdown).map(([key, val]) => {
+        const label = BUDGET_KEYS[key] || '📌 ' + key.replace(/_/g, ' ')
+        const icon  = label.match(/^([\u{1F000}-\u{1FFFF}]|[\u2600-\u27BF])/u)?.[0] || '📌'
+        const text  = label.replace(/^([\u{1F000}-\u{1FFFF}]|[\u2600-\u27BF])\s*/u, '')
+        return (
+          <div key={key} className="budget-item">
+            <span className="budget-icon">{icon}</span>
+            <div className="budget-content">
+              <div className="budget-label">{text}</div>
+              <div className="budget-value">{formatBudgetValue(val)}</div>
             </div>
-          )}
+          </div>
+        )
+      })}
+    </div>
+  </div>
+)}
           {packing_list?.length > 0 && (
             <div style={{ background:'white', borderRadius:16, border:'1px solid #f1f5f9', padding:'20px', boxShadow:'0 2px 8px rgba(0,0,0,0.03)' }}>
               <h3 style={{ fontSize:14, fontWeight:700, color:'#0f172a', margin:'0 0 14px 0' }}>🎒 Đồ cần mang</h3>

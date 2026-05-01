@@ -113,7 +113,7 @@ export default function HeroSection({ user }) {
 
             <div className="hero-stats">
               {[
-                { value: '30s', label: 'Có lịch trình đầu tiên' },
+                { value: 'Vài giây', label: 'Có lịch trình đầu tiên' },
                 { value: '100%', label: 'Miễn phí khi bắt đầu' },
                 { value: 'AI', label: 'Gợi ý theo nhu cầu' },
               ].map((s, i) => (

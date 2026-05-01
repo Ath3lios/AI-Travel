@@ -9,6 +9,7 @@ from .runtime import (
     ChatGoogleGenerativeAI,
     ChatPromptTemplate,
     MessagesPlaceholder,
+    GEMINI_MODELS,
     USE_LANGCHAIN,
     USE_NEW_SDK,
     client,
@@ -20,8 +21,8 @@ from .runtime import (
 
 TOOL_MAP = {
     "get_weather_forecast": get_weather_forecast,
-    "get_top_places": get_top_places,
-    "get_exchange_rate": get_exchange_rate,
+    "get_top_places":       get_top_places,
+    "get_exchange_rate":    get_exchange_rate,
 }
 
 TOOL_DECLARATIONS = [
@@ -39,13 +40,17 @@ TOOL_DECLARATIONS = [
     },
     {
         "name": "get_top_places",
-        "description": "Tìm địa điểm nổi bật qua Goong Maps. Trả về tên, địa chỉ, rating và tọa độ lat/lng để hiển thị bản đồ.",
+        "description": (
+            "Tìm địa điểm nổi bật qua Goong Maps. "
+            "Trả về tên, địa chỉ, rating và tọa độ lat/lng để hiển thị bản đồ."
+        ),
         "parameters": {
             "type": "object",
             "properties": {
-                "city": {"type": "string"},
-                "category": {"type": "string", "enum": ["restaurant", "attraction", "hotel", "cafe", "shopping"]},
-                "limit": {"type": "integer"},
+                "city":     {"type": "string"},
+                "category": {"type": "string",
+                             "enum": ["restaurant", "attraction", "hotel", "cafe", "shopping"]},
+                "limit":    {"type": "integer"},
             },
             "required": ["city", "category"],
         },
@@ -55,11 +60,32 @@ TOOL_DECLARATIONS = [
         "description": "Lấy tỷ giá hối đoái. Dùng khi điểm đến dùng ngoại tệ.",
         "parameters": {
             "type": "object",
-            "properties": {"from_currency": {"type": "string"}, "to_currency": {"type": "string"}},
+            "properties": {
+                "from_currency": {"type": "string"},
+                "to_currency":   {"type": "string"},
+            },
             "required": ["from_currency", "to_currency"],
         },
     },
 ]
+
+
+def is_model_access_error(error: Exception) -> bool:
+    text = repr(error).lower()
+    return any(token in text for token in (
+        "403",
+        "permission_denied",
+        "permission denied",
+        "forbidden",
+        "quota",
+        "resource_exhausted",
+        "model not found",
+        "not found for api version",
+    ))
+
+
+def model_list() -> tuple[str, ...]:
+    return GEMINI_MODELS or ("gemini-2.5-flash", "gemini-2.5-flash-lite")
 
 
 def execute_tool(name: str, args: dict) -> str:
@@ -92,21 +118,28 @@ def get_langchain_tools():
 
 
 def parse_json(raw: str) -> dict:
-    raw = re.sub(r"^```json\s*", "", raw, flags=re.MULTILINE)
-    raw = re.sub(r"^```\s*", "", raw, flags=re.MULTILINE)
-    raw = re.sub(r"\s*```$", "", raw, flags=re.MULTILINE)
+    # Bóc tất cả dạng code fence
+    raw = re.sub(r"```json\s*", "", raw)
+    raw = re.sub(r"```\s*", "", raw)
     raw = raw.strip()
-    match = re.search(r"\{.*\}", raw, re.DOTALL)
-    return json.loads(match.group(0) if match else raw)
+
+    # Tìm outermost JSON object: { đầu tiên → } cuối cùng
+    # rfind tránh cắt sai với JSON lồng sâu nhiều cấp
+    start = raw.find("{")
+    end   = raw.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        raw = raw[start : end + 1]
+
+    return json.loads(raw)
 
 
-def run_agent_langchain(system_prompt: str, user_prompt: str) -> dict:
+def run_agent_langchain_once(system_prompt: str, user_prompt: str, model_name: str) -> dict:
     tools = get_langchain_tools()
     if not tools:
         raise RuntimeError("LangChain chưa sẵn sàng hoặc thiếu tools.")
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=model_name,
         google_api_key=settings.gemini_api_key,
         temperature=0.7,
     )
@@ -115,55 +148,131 @@ def run_agent_langchain(system_prompt: str, user_prompt: str) -> dict:
         ("human", "{input}"),
         MessagesPlaceholder("agent_scratchpad"),
     ])
-    agent = create_tool_calling_agent(llm, tools, prompt)
+    agent    = create_tool_calling_agent(llm, tools, prompt)
     executor = AgentExecutor(agent=agent, tools=tools, verbose=False, max_iterations=10)
-    result = executor.invoke({"input": user_prompt})
+    result   = executor.invoke({"input": user_prompt})
     return parse_json((result or {}).get("output", ""))
 
 
-def run_agent_new_sdk(system_prompt: str, user_prompt: str) -> dict:
-    tools = [genai_types.Tool(function_declarations=[genai_types.FunctionDeclaration(**item) for item in TOOL_DECLARATIONS])]
-    config = genai_types.GenerateContentConfig(system_instruction=system_prompt, tools=tools, temperature=0.7)
-    messages = [genai_types.Content(role="user", parts=[genai_types.Part(text=user_prompt)])]
+def run_agent_langchain(system_prompt: str, user_prompt: str) -> dict:
+    last_error = None
+    for model_name in model_list():
+        try:
+            print(f"Gemini LangChain model: {model_name}")
+            return run_agent_langchain_once(system_prompt, user_prompt, model_name)
+        except Exception as err:
+            last_error = err
+            print(f"Gemini LangChain model failed ({model_name}):", repr(err))
+            if not is_model_access_error(err):
+                raise
+    raise last_error or RuntimeError("All Gemini LangChain models failed")
+
+
+def run_agent_new_sdk_once(system_prompt: str, user_prompt: str, model_name: str) -> dict:
+    tools  = [genai_types.Tool(function_declarations=[
+        genai_types.FunctionDeclaration(**t) for t in TOOL_DECLARATIONS
+    ])]
+    config   = genai_types.GenerateContentConfig(
+        system_instruction=system_prompt, tools=tools, temperature=0.7)
+    messages = [genai_types.Content(role="user",
+                parts=[genai_types.Part(text=user_prompt)])]
 
     for _ in range(10):
-        response = client.models.generate_content(model="gemini-2.5-flash", contents=messages, config=config)
+        response = client.models.generate_content(
+            model=model_name, contents=messages, config=config)
         parts = response.candidates[0].content.parts
         messages.append(genai_types.Content(role="model", parts=parts))
 
-        tool_calls = [part for part in parts if hasattr(part, "function_call") and part.function_call]
+        # Chỉ tính function_call hợp lệ (name không rỗng)
+        tool_calls = [
+            p for p in parts
+            if hasattr(p, "function_call")
+            and p.function_call
+            and getattr(p.function_call, "name", None)
+        ]
         if not tool_calls:
-            raw = "\n".join(part.text for part in parts if hasattr(part, "text") and part.text).strip()
-            return parse_json(raw)
+            text_parts = [
+                p.text.strip()
+                for p in parts
+                if getattr(p, "text", None) and p.text.strip()
+            ]
+            return parse_json("\n".join(text_parts))
 
         results = []
-        for part in tool_calls:
-            fc = part.function_call
-            results.append(genai_types.Part(function_response=genai_types.FunctionResponse(name=fc.name, response={"result": execute_tool(fc.name, dict(fc.args))})))
+        for p in tool_calls:
+            fc = p.function_call
+            results.append(genai_types.Part(
+                function_response=genai_types.FunctionResponse(
+                    name=fc.name,
+                    response={"result": execute_tool(fc.name, dict(fc.args))},
+                )
+            ))
         messages.append(genai_types.Content(role="user", parts=results))
 
     raise RuntimeError("Agent vượt quá 10 vòng lặp")
 
 
-def run_agent_old_sdk(system_prompt: str, user_prompt: str) -> dict:
+def run_agent_new_sdk(system_prompt: str, user_prompt: str) -> dict:
+    last_error = None
+    for model_name in model_list():
+        try:
+            print(f"Gemini SDK model: {model_name}")
+            return run_agent_new_sdk_once(system_prompt, user_prompt, model_name)
+        except Exception as err:
+            last_error = err
+            print(f"Gemini SDK model failed ({model_name}):", repr(err))
+            if not is_model_access_error(err):
+                raise
+    raise last_error or RuntimeError("All Gemini SDK models failed")
+
+
+def run_agent_old_sdk_once(system_prompt: str, user_prompt: str, model_name: str) -> dict:
     model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
+        model_name=model_name,
         system_instruction=system_prompt,
         tools=[{"function_declarations": TOOL_DECLARATIONS}],
     )
-    chat = model.start_chat()
+    chat     = model.start_chat()
     response = chat.send_message(user_prompt)
 
     for _ in range(10):
-        tool_calls = [part.function_call for part in response.parts if hasattr(part, "function_call") and part.function_call.name]
+        # Check an toàn: function_call phải tồn tại và có name
+        tool_calls = [
+            p.function_call
+            for p in response.parts
+            if hasattr(p, "function_call")
+            and p.function_call
+            and getattr(p.function_call, "name", None)
+        ]
         if not tool_calls:
-            return parse_json((response.text or "").strip())
+            text = "".join(
+                p.text for p in response.parts
+                if hasattr(p, "text") and p.text
+            ).strip()
+            return parse_json(text)
+
         response = chat.send_message([
-            genai.protos.Part(function_response=genai.protos.FunctionResponse(
-                name=fc.name,
-                response={"result": execute_tool(fc.name, dict(fc.args))},
-            ))
+            genai.protos.Part(
+                function_response=genai.protos.FunctionResponse(
+                    name=fc.name,
+                    response={"result": execute_tool(fc.name, dict(fc.args))},
+                )
+            )
             for fc in tool_calls
         ])
 
     raise RuntimeError("Agent vượt quá 10 vòng lặp")
+
+
+def run_agent_old_sdk(system_prompt: str, user_prompt: str) -> dict:
+    last_error = None
+    for model_name in model_list():
+        try:
+            print(f"Gemini old SDK model: {model_name}")
+            return run_agent_old_sdk_once(system_prompt, user_prompt, model_name)
+        except Exception as err:
+            last_error = err
+            print(f"Gemini old SDK model failed ({model_name}):", repr(err))
+            if not is_model_access_error(err):
+                raise
+    raise last_error or RuntimeError("All Gemini old SDK models failed")
