@@ -1,7 +1,8 @@
 import math
 import unicodedata
 
-from .providers import get_top_places_from_goong, get_weather_forecast
+from .providers import get_top_places_from_db, get_top_places_from_goong, get_weather_forecast
+from .runtime import DB_CONTEXT
 
 
 DESTINATION_CENTERS = {
@@ -193,24 +194,50 @@ def safe_weather_forecast(destination: str, days: int) -> dict:
 
 
 def safe_top_places(destination: str, category: str, limit: int) -> list[dict]:
+    """
+    Lấy địa điểm cho fallback theo thứ tự ưu tiên:
+      1. Catalog DB (lọc theo destination/city) — tận dụng dữ liệu đã sync từ itinerary.
+      2. Goong API / nominatim mock — nếu DB không đủ.
+      3. Synthetic offline — nếu cả hai đều thất bại hoặc trả về rỗng.
+
+    Kết quả được gộp và dedup theo tên để đảm bảo đủ `limit` item.
+    """
+    places: list[dict] = []
+    seen_names: set[str] = set()
+
+    def _add(items: list[dict]) -> None:
+        for p in items:
+            name = str(p.get("name") or "").strip().lower()
+            if name and name not in seen_names:
+                seen_names.add(name)
+                places.append(p)
+
+    # ── Bước 1: Catalog DB ──────────────────────────────────
+    db = DB_CONTEXT.get()
+    if db is not None:
+        try:
+            db_places = get_top_places_from_db(db, destination, category, limit)
+            _add(db_places)
+        except Exception:
+            pass
+
+    if len(places) >= limit:
+        return places[:limit]
+
+    # ── Bước 2: Goong / mock ────────────────────────────────
     try:
         data = get_top_places_from_goong(destination, category, limit) or {}
-        places = data.get("places") or []
-        if places:
-            if len(places) >= limit:
-                return places
-            existing = {str(place.get("name", "")).strip().lower() for place in places}
-            for place in synthetic_places(destination, category, limit):
-                name = str(place.get("name", "")).strip().lower()
-                if name and name not in existing:
-                    places.append(place)
-                    existing.add(name)
-                if len(places) >= limit:
-                    break
-            return places
+        _add(data.get("places") or [])
     except Exception:
         pass
-    return synthetic_places(destination, category, limit)
+
+    if len(places) >= limit:
+        return places[:limit]
+
+    # ── Bước 3: Synthetic offline ───────────────────────────
+    _add(synthetic_places(destination, category, limit))
+
+    return places[:limit]
 
 
 def pick_place(places: list[dict], index: int, city: str, label: str) -> dict:

@@ -148,44 +148,92 @@ def get_top_places_from_goong(city: str, category: str, limit: int = 5) -> dict:
 
 
 def get_top_places_from_db(db: Session, city: str, category: str, limit: int) -> list[dict]:
-    """Lấy địa điểm từ DB nội bộ (catalog)."""
+    """
+    Lấy địa điểm từ DB nội bộ (catalog), lọc theo city/destination.
+
+    Chiến lược lọc:
+    1. Tìm Destination khớp city (ilike) → lấy destination_id đó.
+    2. Query Hotel/Activity theo destination_id đó.
+    3. Nếu không tìm được destination trong DB, fallback lọc theo address ilike city.
+    """
     cat = (category or "").strip().lower()
+    city_key = (city or "").strip()
     results: list[dict] = []
 
+    # Bước 1: Tìm destination_id khớp với city
+    dest_row = db.query(Destination).filter(
+        (Destination.city.ilike(f"%{city_key}%")) | (Destination.name.ilike(f"%{city_key}%"))
+    ).first()
+    destination_id: int | None = dest_row.id if dest_row else None
+
     if cat == "hotel":
-        hotels = db.query(Hotel).order_by(
+        hotels_q = db.query(Hotel)
+        if destination_id is not None:
+            hotels_q = hotels_q.filter(Hotel.destination_id == destination_id)
+        else:
+            # fallback: lọc theo address
+            hotels_q = hotels_q.filter(Hotel.address.ilike(f"%{city_key}%"))
+        hotels = hotels_q.order_by(
             Hotel.rating.desc().nullslast(), Hotel.created_at.desc()
         ).limit(limit).all()
         for h in hotels:
-            results.append({"name": h.name, "address": h.address or "",
-                             "rating": h.rating, "lat": h.lat, "lng": h.lng})
+            results.append({
+                "name": h.name,
+                "address": h.address or city_key,
+                "rating": h.rating,
+                "lat": h.lat,
+                "lng": h.lng,
+            })
         return results
 
-    activities_query = db.query(Activity)
+    # Activity (attraction, restaurant, cafe, shopping, ...)
+    activities_q = db.query(Activity)
+    if destination_id is not None:
+        activities_q = activities_q.filter(Activity.destination_id == destination_id)
+    else:
+        activities_q = activities_q.filter(Activity.address.ilike(f"%{city_key}%"))
     if cat:
-        activities_query = activities_query.filter(Activity.category == cat)
-    activities = activities_query.order_by(
+        activities_q = activities_q.filter(Activity.category == cat)
+    activities = activities_q.order_by(
         Activity.rating.desc().nullslast(), Activity.created_at.desc()
     ).limit(limit).all()
     for a in activities:
-        results.append({"name": a.name, "address": a.address or "",
-                        "rating": a.rating, "lat": a.lat, "lng": a.lng})
+        results.append({
+            "name": a.name,
+            "address": a.address or city_key,
+            "rating": a.rating,
+            "lat": a.lat,
+            "lng": a.lng,
+        })
     if results:
         return results
 
+    # Fallback cuối: lấy từ Destination table nếu category phù hợp
     if cat in {"attraction", "shopping", "restaurant", "cafe"}:
-        destinations = db.query(Destination).order_by(
+        dest_q = db.query(Destination)
+        if destination_id is not None:
+            dest_q = dest_q.filter(Destination.id == destination_id)
+        else:
+            dest_q = dest_q.filter(
+                (Destination.city.ilike(f"%{city_key}%")) | (Destination.name.ilike(f"%{city_key}%"))
+            )
+        destinations = dest_q.order_by(
             Destination.rating.desc().nullslast(), Destination.created_at.desc()
         ).limit(limit).all()
         for d in destinations:
-            results.append({"name": d.name, "address": d.city or city,
-                             "rating": d.rating, "lat": d.lat, "lng": d.lng})
+            results.append({
+                "name": d.name,
+                "address": d.city or city_key,
+                "rating": d.rating,
+                "lat": d.lat,
+                "lng": d.lng,
+            })
     return results
 
 
 def get_top_places(city: str, category: str, limit: int = 5) -> dict:
     """
-    Hàm dùng cho AI agent tool: ưu tiên DB → Goong/mock.
+    Hàm dùng cho AI agent tool: ưu tiên catalog DB → Goong/mock.
     """
     db = DB_CONTEXT.get()
     if db is not None:

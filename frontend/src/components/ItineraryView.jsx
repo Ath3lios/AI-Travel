@@ -486,7 +486,7 @@ function DayView({ day, dayIndex, accommodation }) {
   const finalMapPlaces = mapPlaces.length > 0 ? mapPlaces : fallbackAccommodationPlaces
 
   return (
-    <div style={{ marginBottom: 40 }}>
+    <div style={{ marginBottom: 0 }}>
       {modalItem && (
         <PlaceModal
           item={modalItem}
@@ -496,24 +496,24 @@ function DayView({ day, dayIndex, accommodation }) {
         />
       )}
 
-      {/* Day header */}
-      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:20, flexWrap:'wrap', paddingLeft: 8 }}>
-        <div style={{ width:48, height:48, background:`linear-gradient(135deg, ${activeColor}, ${activeColor}dd)`, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:800, color:'white', flexShrink:0, boxShadow:`0 8px 20px ${activeColor}40` }}>
-          {String(day.day || '').replace(/[^\d]/g, '') || dayIndex + 1}
-        </div>
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:activeColor, textTransform:'uppercase', letterSpacing:'1px', marginBottom:2 }}>NGÀY {String(day.day || '').replace(/[^\d]/g, '') || dayIndex + 1}</div>
-          <div style={{ fontSize:26, fontWeight:600, color:'#0f172a', fontFamily:"'Fraunces', serif", lineHeight:1.2, letterSpacing:'-0.5px' }}>{day.title}</div>
-          {day.weather && <div style={{ fontSize:14, color:'#64748b', marginTop:4, fontWeight: 500 }}>🌤️ {day.weather}</div>}
-        </div>
-      </div>
-
       <div ref={dayDetailRef} className="day-detail-grid">
         <div className="day-map-col">
           <GoongMap key={`${dayIndex}-${activePlace}`} places={finalMapPlaces} activePlace={activePlace} dayIndex={dayIndex} />
         </div>
 
         <div className="day-schedule-col">
+          {/* Day header */}
+          <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:20, flexWrap:'wrap', paddingLeft: 8 }}>
+            <div style={{ width:36, height:36, background:`linear-gradient(135deg, ${activeColor}, ${activeColor}dd)`, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:800, color:'white', flexShrink:0, boxShadow:`0 6px 16px ${activeColor}40` }}>
+              {String(day.day || '').replace(/[^\d]/g, '') || dayIndex + 1}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:activeColor, textTransform:'uppercase', letterSpacing:'1px', marginBottom:2 }}>NGÀY {String(day.day || '').replace(/[^\d]/g, '') || dayIndex + 1}</div>
+              <div style={{ fontSize:18, fontWeight:600, color:'#0f172a', fontFamily:"'Fraunces', serif", lineHeight:1.2, letterSpacing:'-0.3px' }}>{day.title}</div>
+              {day.weather && <div style={{ fontSize:13, color:'#64748b', marginTop:4, fontWeight: 500 }}>🌤️ {day.weather}</div>}
+            </div>
+          </div>
+
           {day.schedule?.map((item, idx) => {
             const placeIcon = getPlaceIcon(item)
             const hasCoords = hasValidCoords(item)
@@ -531,40 +531,47 @@ function DayView({ day, dayIndex, accommodation }) {
             }
 
             return (
-              <div key={idx}
-                className={`schedule-item-row ${isActive ? 'active' : ''}`}
-                onClick={openModal}
-                style={{ 
-                  '--active-color': activeColor,
-                  '--active-bg': `${activeColor}11`,
-                }}
-              >
-                <div className="schedule-item-icon-wrapper">
-                  {idx < day.schedule.length - 1 && <div className="schedule-connector" />}
-                  <div className={`schedule-item-icon ${isActive ? 'active-icon' : ''}`}>
-                    {placeIcon}
+              <div key={idx} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 180px', gap: 12, alignItems: 'center' }}>
+                {/* Card chính */}
+                <div
+                  className={`schedule-item-row ${isActive ? 'active' : ''}`}
+                  onClick={openModal}
+                  style={{ '--active-color': activeColor, '--active-bg': `${activeColor}11` }}
+                >
+                  <div className="schedule-item-icon-wrapper">
+                    {idx < day.schedule.length - 1 && <div className="schedule-connector" />}
+                    <div className={`schedule-item-icon ${isActive ? 'active-icon' : ''}`}>
+                      {placeIcon}
+                    </div>
+                  </div>
+
+                  <div className="schedule-item-content">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <span style={{ fontSize:12, color:activeColor, fontWeight:700, flexShrink: 0 }}>{item.time}</span>
+                      {item.duration && <span style={{ fontSize:11, color: '#94a3b8', fontWeight: 500 }}>• {item.duration}</span>}
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom: 4, flexWrap:'wrap' }}>
+                      <span style={{ fontSize:13, fontWeight:700, color:'#0f172a', lineHeight:1.3, letterSpacing:'-0.1px' }}>{item.place}</span>
+                      {placeIdx !== -1 && (
+                        <span onClick={handleMapClick} className="map-badge">
+                          #{placeIdx+1} Bản đồ
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize:12, color:'#64748b', lineHeight: 1.5 }}>{item.address}</div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <div style={{ fontSize:18, color:'#cbd5e1' }}>›</div>
                   </div>
                 </div>
-                
-                <div className="schedule-item-content">
-                  <div style={{ fontSize:12, color:activeColor, fontWeight:700, marginBottom:4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {item.time} 
-                    {item.duration && <span style={{ color: '#94a3b8', fontWeight: 500 }}>• {item.duration}</span>}
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
-                    <span style={{ fontSize:16, fontWeight:700, color:'#0f172a', lineHeight:1.3, letterSpacing:'-0.2px' }}>{item.place}</span>
-                    {placeIdx !== -1 && (
-                      <span onClick={handleMapClick} className="map-badge">
-                        #{placeIdx+1} Bản đồ
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize:13, color:'#64748b', lineHeight: 1.5 }}>{item.address}</div>
-                </div>
-                
-                <div className="schedule-item-meta">
-                  {item.estimated_cost && <div className="cost-badge">{item.estimated_cost}</div>}
-                  <div style={{ fontSize:20, color:'#cbd5e1', marginTop:8 }}>›</div>
+
+                {/* Cost badge cột giữa */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {item.estimated_cost
+                    ? <div className="cost-badge" style={{ textAlign: 'center', whiteSpace: 'normal', lineHeight: 1.4 }}>{item.estimated_cost}</div>
+                    : <div style={{ height: 28 }} />
+                  }
                 </div>
               </div>
             )
@@ -634,24 +641,24 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
         .budget-value { font-size: 15px; font-weight: 700; color: #0f172a; }
 
         .day-detail-grid { display: grid; grid-template-columns: 1fr; gap: 24px; width: 100%; }
-        .day-map-col { order: 1; }
-        .day-schedule-col { order: 2; display: flex; flex-direction: column; gap: 12px; }
+        .day-map-col { order: 2; }
+        .day-schedule-col { order: 1; display: flex; flex-direction: column; gap: 12px; }
         
         .schedule-item-row {
-          display: grid; grid-template-columns: 56px minmax(0,1fr) auto; gap: 16px; align-items: center;
-          padding: 16px 20px; background: white; border-radius: 20px; cursor: pointer; border: 1px solid transparent;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.02); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
+          display: grid; grid-template-columns: 44px minmax(0,1fr) 16px; gap: 12px; align-items: center;
+          padding: 12px 16px; background: white; border-radius: 16px; cursor: pointer; border: 1px solid transparent;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.02); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
         }
-        .schedule-item-row:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(0,0,0,0.05); border-color: #e2e8f0; }
-        .schedule-item-row.active { background: var(--active-bg); border-color: var(--active-color); box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .schedule-item-row:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-color: #e2e8f0; }
+        .schedule-item-row.active { background: var(--active-bg); border-color: var(--active-color); box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
         
         .schedule-item-icon-wrapper { position: relative; display: flex; justify-content: center; height: 100%; align-items: center; }
-        .schedule-connector { position: absolute; width: 2px; background: #e2e8f0; top: 40px; bottom: -30px; left: 50%; transform: translateX(-50%); z-index: 0; }
+        .schedule-connector { position: absolute; width: 2px; background: #e2e8f0; top: 32px; bottom: -22px; left: 50%; transform: translateX(-50%); z-index: 0; }
         .schedule-item-icon {
-          width: 44px; height: 44px; border-radius: 50%; background: #f8fafc; border: 2px solid #e2e8f0;
-          display: flex; align-items: center; justify-content: center; font-size: 20px; position: relative; z-index: 1; transition: all 0.3s;
+          width: 36px; height: 36px; border-radius: 50%; background: #f8fafc; border: 2px solid #e2e8f0;
+          display: flex; align-items: center; justify-content: center; font-size: 16px; position: relative; z-index: 1; transition: all 0.3s;
         }
-        .schedule-item-icon.active-icon { background: white; border-color: var(--active-color); box-shadow: 0 0 0 4px var(--active-bg); }
+        .schedule-item-icon.active-icon { background: white; border-color: var(--active-color); box-shadow: 0 0 0 3px var(--active-bg); }
 
         .map-badge { font-size: 11px; padding: 4px 10px; border-radius: 8px; background: #f1f5f9; color: #475569; font-weight: 700; cursor: pointer; transition: all 0.2s; }
         .map-badge:hover { background: var(--active-color); color: white; }
@@ -660,9 +667,9 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
         .schedule-item-meta { text-align: right; display: flex; flex-direction: column; alignItems: flex-end; justify-content: center; min-width: 0; }
 
         @media(min-width:1024px){
-          .day-detail-grid { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 32px; align-items: stretch; }
+          .day-detail-grid { grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 32px; align-items: stretch; }
           .day-map-col { order: 2; position: sticky; top: 24px; height: calc(100vh - 48px); }
-          .day-schedule-col { order: 1; padding-bottom: 40px; }
+          .day-schedule-col { order: 1; padding-bottom: 0; }
         }
         @media(max-width:900px){
           .schedule-item-row { grid-template-columns: 48px minmax(0,1fr) auto; gap: 12px; padding: 16px; }
