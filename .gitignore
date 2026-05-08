@@ -2,12 +2,16 @@
 .env
 
 # Python virtual environment
+.venv/
 venv/
+backend/venv/
 __pycache__/
 *.pyc
 
 # Node modules
 node_modules/
+frontend/node_modules/
+frontend/dist/
 
 # Database
 *.db
