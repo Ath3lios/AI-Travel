@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
@@ -7,6 +7,7 @@ export default function Navbar() {
   const { user, logout } = useAuth()
   const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
   const [openMenu, setOpenMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -14,6 +15,19 @@ export default function Navbar() {
     setOpenMenu(false)
     logout()
     navigate('/')
+  }
+
+  // Hàm xử lý cuộn mượt mà đến các section
+  const scrollToSection = (e, id) => {
+    e.preventDefault()
+    if (location.pathname !== '/') {
+      navigate(`/#${id}`)
+    } else {
+      const element = document.getElementById(id)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
   }
 
   useEffect(() => {
@@ -29,11 +43,21 @@ export default function Navbar() {
 
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleEscape)
+    
+    // Xử lý cuộn nếu truy cập từ trang khác có mang theo hash (vd: /#faq)
+    if (location.hash) {
+      setTimeout(() => {
+        const id = location.hash.replace('#', '')
+        const element = document.getElementById(id)
+        if (element) element.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [])
+  }, [location.hash])
 
   return (
     <>
@@ -93,6 +117,7 @@ export default function Navbar() {
           padding: 9px 14px;
           border: 1px solid transparent;
           transition: all 0.2s ease;
+          cursor: pointer;
         }
 
         .nav-link {
@@ -242,9 +267,8 @@ export default function Navbar() {
         }
 
         @media (max-width: 900px) {
-          .nav-user {
-            display: none;
-          }
+          .nav-user { display: none; }
+          .nav-scroll-link { display: none; } /* Ẩn bớt link cuộn trên mobile */
         }
 
         @media (max-width: 720px) {
@@ -260,9 +284,7 @@ export default function Navbar() {
             justify-content: flex-end;
           }
 
-          .nav-brand {
-            font-size: 17px;
-          }
+          .nav-brand { font-size: 17px; }
 
           .nav-link,
           .nav-ghost,
@@ -294,6 +316,12 @@ export default function Navbar() {
           </Link>
 
           <div className="nav-links">
+            <a onClick={(e) => scrollToSection(e, 'how-it-works')} href="/#how-it-works" className="nav-link nav-scroll-link">Cách hoạt động</a>
+            <a onClick={(e) => scrollToSection(e, 'comparison')} href="/#comparison" className="nav-link nav-scroll-link">Ưu điểm</a>
+            <a onClick={(e) => scrollToSection(e, 'faq')} href="/#faq" className="nav-link nav-scroll-link">Hỏi đáp</a>
+
+            <div style={{ width: 1, height: 24, background: 'var(--border-soft)', margin: '0 4px' }} className="nav-scroll-link" />
+
             <button
               type="button"
               className="theme-toggle-btn"

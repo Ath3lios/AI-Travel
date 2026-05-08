@@ -15,6 +15,7 @@ export default function HeroSection({ user }) {
   const frameRef = useRef(null)
   const rafRef = useRef(0)
   const pointerRef = useRef({ x: 0, y: 0 })
+  
   useEffect(() => {
     if (desktopCarouselImages.length <= 1) {
       setActiveDesktopSlide(0)
@@ -81,50 +82,27 @@ export default function HeroSection({ user }) {
       <div className="hero-bg-pattern" />
       <div className="hero-shell">
         <div className="hero-grid hero-onboarding-grid">
+          
           <div className="hero-copy">
             <div className="badge"><span>✦</span> AI Travel</div>
+            
             <h1 className="hero-title">
               {'Biến ý tưởng nghỉ dưỡng thành '}<em>lịch trình sẵn sàng khởi hành</em>
             </h1>
+            
             <p className="hero-lead">
               Từ điểm đến, ngân sách đến sở thích cá nhân, AI Travel dựng ngay một kế hoạch rõ ràng
               theo ngày, đủ chi phí, đủ nhịp đi chơi và đủ thông tin để bạn ra quyết định nhanh.
             </p>
 
-            <div className="hero-chips">
-              {['Cá nhân hóa theo sở thích', 'Không cần thẻ tín dụng', 'Xem lịch trình ngay trên web'].map((item, idx) => (
-                <span key={idx} className="hero-chip">
-                  {item}
-                </span>
-              ))}
-            </div>
-
-            <div className="btn-group hero-actions">
+            <div className="btn-group hero-actions" style={{ marginTop: '24px' }}>
               <Link to={user ? '/dashboard' : '/register'} className="btn-primary">
                 Tạo lịch trình ngay
               </Link>
-              <a href="#how-it-works" className="btn-secondary hero-outline-link">
-                Xem cách hoạt động
-              </a>
-            </div>
-
-            <div className="hero-stats-strip">
-              {[
-                { icon: '⏱', value: '30s', label: 'Có đề xuất đầu tiên' },
-                { icon: '💳', value: '0đ', label: 'Bắt đầu không mất phí' },
-                { icon: '🧭', value: 'AI', label: 'Cân bằng điểm đến, chi phí và nhịp đi' },
-              ].map((s, i) => (
-                <div key={i} className="hero-stat">
-                  <div className="hero-stat-icon">{s.icon}</div>
-                  <div className="hero-stat-body">
-                    <div className="hero-stat-value">{s.value}</div>
-                    <div className="hero-stat-label">{s.label}</div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
 
+          {/* CỘT BÊN PHẢI (ẢNH CAROUSEL) */}
           <div className="hero-scene" aria-hidden="true">
             <div
               ref={frameRef}
@@ -151,6 +129,7 @@ export default function HeroSection({ user }) {
               </div>
             </div>
           </div>
+          
         </div>
       </div>
     </section>

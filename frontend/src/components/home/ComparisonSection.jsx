@@ -16,7 +16,7 @@ const aiItems = [
 
 export default function ComparisonSection() {
   return (
-    <section className="home-section">
+    <section id="comparison" className="home-section">
       <div className="home-inner narrow">
         <div className="section-head">
           <span className="section-eyebrow">Tại sao chọn AI Travel?</span>

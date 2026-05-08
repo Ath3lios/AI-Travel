@@ -264,31 +264,6 @@ export default function TripDetail() {
     [activeDay, days.length]
   )
 
-  const handleExportPdf = useCallback(() => {
-    window.print()
-  }, [])
-
-  const handleShare = useCallback(async () => {
-    const shareUrl = window.location.href
-    const shareData = {
-      title: `Lịch trình ${trip?.destination || 'AI Travel'}`,
-      text: `Xem lịch trình ${trip?.destination || ''} trên AI Travel`,
-      url: shareUrl,
-    }
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData)
-        return
-      }
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl)
-        window.alert('Đã sao chép liên kết lịch trình.')
-      }
-    } catch {
-      // ignore share cancellations
-    }
-  }, [trip?.destination])
-
   if (loading) {
     return (
       <div style={{ maxWidth: 900, margin: '30px auto', padding: '0 12px' }}>
@@ -362,6 +337,9 @@ export default function TripDetail() {
           .trip-title { font-size: 16px !important; }
           .trip-content { padding: 16px 12px; }
         }
+          html[data-theme='dark'] .tab-btn.active {
+          color: #f8fafc;
+        }
       `}</style>
 
       <div className='trip-detail-wrap'>
@@ -377,8 +355,6 @@ export default function TripDetail() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <button onClick={handleExportPdf} className='trip-ghost-btn'>🖨 Export PDF</button>
-            <button onClick={handleShare} className='trip-ghost-btn'>🔗 Chia sẻ</button>
             <button
               onClick={() => setShowEditForm(prev => !prev)}
               className={`trip-edit-btn ${showEditForm ? 'cancel' : ''}`}

@@ -69,6 +69,17 @@ function hasValidCoords(item) {
   return Boolean(item?.lat && item?.lng && item.lat !== 0 && item.lng !== 0)
 }
 
+function parseStartTime(timeStr) {
+  if (!timeStr) return 9999;
+  const match = String(timeStr).match(/(\d{1,2}):(\d{2})/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    return hours * 60 + minutes;
+  }
+  return 9999;
+}
+
 const phraseRegexCache = new Map()
 
 function escapeRegExp(value) {
@@ -488,18 +499,19 @@ function DayView({ day, dayIndex, accommodation, totalBudget = 0 }) {
   const [modalRect, setModalRect] = useState(null)
   const dayDetailRef = useRef(null)
   const activeColor = DAY_COLORS[dayIndex % DAY_COLORS.length]
-  const dayEstimatedCost = useMemo(
-    () => (day.schedule || []).reduce((sum, item) => sum + parseBudgetNumber(item.estimated_cost), 0),
-    [day.schedule]
-  )
-  const budgetProgress = totalBudget > 0 ? Math.min(100, Math.round((dayEstimatedCost / totalBudget) * 100)) : 0
+
+  const sortedSchedule = useMemo(() => {
+    if (!day.schedule) return [];
+    return [...day.schedule].sort((a, b) => parseStartTime(a.time) - parseStartTime(b.time));
+  }, [day.schedule]);
 
   const mapPlaces = useMemo(
-    () => (day.schedule || [])
+    () => sortedSchedule
       .filter(hasValidCoords)
       .map(item => ({ place:item.place, address:item.address, lat:item.lat, lng:item.lng, time:item.time })),
-    [day.schedule]
+    [sortedSchedule]
   )
+  
   const fallbackAccommodationPlaces = useMemo(
     () => (accommodation || [])
       .filter(hasValidCoords)
@@ -537,28 +549,7 @@ function DayView({ day, dayIndex, accommodation, totalBudget = 0 }) {
             </div>
           </div>
 
-          {dayEstimatedCost > 0 && totalBudget > 0 && (
-            <div style={{ margin: '0 0 18px 8px', background: '#f8fbff', border: '1px solid #e0edf7', borderRadius: 16, padding: '14px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6f8ba1', marginBottom: 4 }}>
-                    Chi tiết hàng ngày
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
-                    {formatCompactCurrency(dayEstimatedCost)} <span style={{ color: '#6f8ba1', fontSize: 13, fontWeight: 600 }}>/ {formatCompactCurrency(totalBudget)}</span>
-                  </div>
-                </div>
-                <span style={{ fontSize: 12, color: activeColor, fontWeight: 700, background: `${activeColor}12`, border: `1px solid ${activeColor}33`, borderRadius: 999, padding: '6px 10px' }}>
-                  {budgetProgress}% budget
-                </span>
-              </div>
-              <div style={{ height: 8, background: '#e7f0f8', borderRadius: 999, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${budgetProgress}%`, background: `linear-gradient(90deg, ${activeColor}, ${activeColor}bb)`, borderRadius: 999 }} />
-              </div>
-            </div>
-          )}
-
-          {day.schedule?.map((item, idx) => {
+          {sortedSchedule?.map((item, idx) => {
             const placeIcon = getPlaceIcon(item)
             const hasCoords = hasValidCoords(item)
             const placeIdx = hasCoords ? finalMapPlaces.findIndex(p => p.place === item.place) : -1
@@ -583,7 +574,7 @@ function DayView({ day, dayIndex, accommodation, totalBudget = 0 }) {
                   style={{ '--active-color': activeColor, '--active-bg': `${activeColor}11` }}
                 >
                   <div className="schedule-item-icon-wrapper">
-                    {idx < day.schedule.length - 1 && <div className="schedule-connector" />}
+                    {idx < sortedSchedule.length - 1 && <div className="schedule-connector" />}
                     <div className={`schedule-item-icon ${isActive ? 'active-icon' : ''}`}>
                       {placeIcon}
                     </div>
@@ -712,7 +703,7 @@ export default function ItineraryView({ itinerary, focusDay = null, totalBudget 
 
         @media(min-width:1024px){
           .day-detail-grid { grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 32px; align-items: stretch; }
-          .day-map-col { order: 2; position: sticky; top: 24px; height: calc(100vh - 48px); }
+          .day-map-col { order: 2;}
           .day-schedule-col { order: 1; padding-bottom: 0; }
         }
         @media(max-width:900px){
@@ -746,6 +737,11 @@ export default function ItineraryView({ itinerary, focusDay = null, totalBudget 
         html[data-theme='dark'] .premium-card h3,
         html[data-theme='dark'] .hotel-card div {
           color: inherit;
+        }
+        html[data-theme='dark'] .cost-badge {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: rgba(16, 185, 129, 0.25) !important;
+        color: #34d399 !important;
         }
       `}</style>
 
