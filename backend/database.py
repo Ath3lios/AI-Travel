@@ -43,6 +43,7 @@ class Trip(Base):
 class Destination(Base):
     __tablename__ = "destinations"
     id = Column(Integer, primary_key=True, index=True)
+    trip_id = Column(Integer, ForeignKey("trips.id"), index=True, nullable=True)
     name = Column(String, index=True, nullable=False)
     city = Column(String, index=True, nullable=True)
     lat = Column(Float, nullable=True)
@@ -56,6 +57,7 @@ class Destination(Base):
 class Hotel(Base):
     __tablename__ = "hotels"
     id = Column(Integer, primary_key=True, index=True)
+    trip_id = Column(Integer, ForeignKey("trips.id"), index=True, nullable=True)
     destination_id = Column(Integer, ForeignKey("destinations.id"), index=True, nullable=True)
     name = Column(String, index=True, nullable=False)
     price_range = Column(String, nullable=True)
@@ -69,6 +71,7 @@ class Hotel(Base):
 class Activity(Base):
     __tablename__ = "activities"
     id = Column(Integer, primary_key=True, index=True)
+    trip_id = Column(Integer, ForeignKey("trips.id"), index=True, nullable=True)
     destination_id = Column(Integer, ForeignKey("destinations.id"), index=True, nullable=True)
     name = Column(String, index=True, nullable=False)
     category = Column(String, index=True, nullable=True)
@@ -110,3 +113,18 @@ def create_tables():
         if "is_active" not in user_column_names:
             conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
             conn.execute(text("UPDATE users SET is_active = 1 WHERE is_active IS NULL"))
+        destination_columns = conn.execute(text("PRAGMA table_info(destinations)")).fetchall()
+        destination_column_names = {col[1] for col in destination_columns}
+        if "trip_id" not in destination_column_names:
+            conn.execute(text("ALTER TABLE destinations ADD COLUMN trip_id INTEGER"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destinations_trip_id ON destinations (trip_id)"))
+        hotel_columns = conn.execute(text("PRAGMA table_info(hotels)")).fetchall()
+        hotel_column_names = {col[1] for col in hotel_columns}
+        if "trip_id" not in hotel_column_names:
+            conn.execute(text("ALTER TABLE hotels ADD COLUMN trip_id INTEGER"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_hotels_trip_id ON hotels (trip_id)"))
+        activity_columns = conn.execute(text("PRAGMA table_info(activities)")).fetchall()
+        activity_column_names = {col[1] for col in activity_columns}
+        if "trip_id" not in activity_column_names:
+            conn.execute(text("ALTER TABLE activities ADD COLUMN trip_id INTEGER"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_activities_trip_id ON activities (trip_id)"))

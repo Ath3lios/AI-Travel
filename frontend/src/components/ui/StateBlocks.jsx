@@ -2,12 +2,12 @@ export function LoadingState({ message = 'Đang tải dữ liệu...' }) {
   return (
     <div
       style={{
-        background: 'white',
+        background: 'var(--surface-panel)',
         borderRadius: 16,
-        border: '1px solid #e8ecf0',
+        border: '1px solid var(--border-soft)',
         padding: '36px 20px',
         textAlign: 'center',
-        color: '#64748b',
+        color: 'var(--text-muted)',
         fontSize: 14,
       }}
     >
@@ -21,7 +21,7 @@ export function EmptyState({ icon = '✈️', message, accentText }) {
   return (
     <div
       style={{
-        background: 'white',
+        background: 'var(--surface-panel)',
         borderRadius: 16,
         border: '1.5px dashed #c7d2fe',
         padding: '36px 20px',
@@ -29,9 +29,9 @@ export function EmptyState({ icon = '✈️', message, accentText }) {
       }}
     >
       <div style={{ fontSize: 40, marginBottom: 8 }}>{icon}</div>
-      <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>
         {message}
-        {accentText ? <strong style={{ color: '#6366f1' }}>{accentText}</strong> : null}
+        {accentText ? <strong style={{ color: 'var(--accent-indigo)' }}>{accentText}</strong> : null}
       </p>
     </div>
   )

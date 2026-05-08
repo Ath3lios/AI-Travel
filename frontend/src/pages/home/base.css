@@ -1,9 +1,9 @@
-﻿.home-root {
+.home-root {
   position: relative;
   min-height: 100vh;
-  background: var(--home-sky);
+  background: var(--app-bg);
   font-family: 'DM Sans', sans-serif;
-  color: #0f172a;
+  color: var(--text-strong);
 }
 
 .section-divider {
@@ -38,14 +38,14 @@
 }
 
 .btn-secondary {
-  background: white;
-  color: #0f172a;
+  background: var(--surface-panel);
+  color: var(--text-strong);
   padding: 14px 32px;
   border-radius: 14px;
   font-size: 15px;
   font-weight: 600;
   text-decoration: none;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-soft);
   transition: all 0.2s;
   display: inline-block;
 }
@@ -59,8 +59,8 @@
 .home-footer {
   padding: 32px;
   text-align: center;
-  border-top: 1px solid rgba(224,239,250,0.75);
-  color: #3d6078;
+  border-top: 1px solid var(--home-footer-border);
+  color: var(--home-footer-text);
   font-size: 13px;
 }
 
@@ -78,9 +78,7 @@
   .step-card,
   .hero-stat,
   .tech-card,
-  .preview-card,
-  .cloud-image-top,
-  .cloud-fallback {
+  .preview-card {
     transition: none !important;
     animation: none !important;
   }

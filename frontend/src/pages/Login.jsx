@@ -29,7 +29,7 @@ export default function Login() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
+      background: 'linear-gradient(160deg, var(--app-bg) 0%, var(--app-bg-soft) 50%, var(--app-bg) 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: "'DM Sans', sans-serif",
       padding: '24px',
@@ -38,29 +38,29 @@ export default function Login() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@300;600&display=swap');
         .auth-input {
           width: 100%; padding: 12px 16px;
-          border: 1.5px solid #e2e8f0; border-radius: 12px;
+          border: 1.5px solid var(--border-soft); border-radius: 12px;
           font-size: 14px; font-family: 'DM Sans', sans-serif;
           outline: none; transition: all 0.2s;
-          background: #fafafa; box-sizing: border-box; color: #0f172a;
+          background: var(--surface-panel-alt); box-sizing: border-box; color: var(--text-strong);
         }
-        .auth-input:focus { border-color: #0ea5e9; background: white; box-shadow: 0 0 0 3px rgba(14,165,233,0.08); }
-        .auth-input::placeholder { color: #94a3b8; }
+        .auth-input:focus { border-color: var(--brand-primary); background: var(--surface-panel); box-shadow: 0 0 0 3px rgba(34,211,238,0.14); }
+        .auth-input::placeholder { color: var(--text-muted); }
         .auth-btn {
           width: 100%; padding: 13px;
-          background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-          color: white; border: none; border-radius: 12px;
+          background: linear-gradient(135deg, var(--brand-primary), var(--accent-indigo));
+          color: #0b1120; border: none; border-radius: 12px;
           font-size: 15px; font-weight: 600; cursor: pointer;
           font-family: 'DM Sans', sans-serif;
-          box-shadow: 0 4px 16px rgba(14,165,233,0.35);
+          box-shadow: 0 4px 16px rgba(34,211,238,0.28);
           transition: all 0.2s;
         }
-        .auth-btn:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(14,165,233,0.45); transform: translateY(-1px); }
+        .auth-btn:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(34,211,238,0.36); transform: translateY(-1px); }
         .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
       `}</style>
 
       <div style={{
-        background: 'white', borderRadius: 24,
+        background: 'var(--surface-panel)', borderRadius: 24,
         padding: '40px 36px', width: '100%', maxWidth: 420,
         boxShadow: '0 20px 60px rgba(14,165,233,0.08), 0 4px 16px rgba(0,0,0,0.04)',
         border: '1px solid rgba(14,165,233,0.08)',
@@ -71,11 +71,11 @@ export default function Login() {
           <div style={{ fontSize: 36, marginBottom: 8 }}>✈️</div>
           <h1 style={{
             fontFamily: "'Fraunces', serif", fontSize: 26, fontWeight: 600,
-            color: '#0f172a', margin: '0 0 6px', letterSpacing: -0.5,
+            color: 'var(--text-strong)', margin: '0 0 6px', letterSpacing: -0.5,
           }}>
             Chào mừng trở lại
           </h1>
-          <p style={{ fontSize: 14, color: '#94a3b8', margin: 0 }}>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
             Đăng nhập để xem lịch trình của bạn
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function Login() {
         {/* Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-soft)', display: 'block', marginBottom: 6 }}>
               Email
             </label>
             <input
@@ -105,7 +105,7 @@ export default function Login() {
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-soft)', display: 'block', marginBottom: 6 }}>
               Mật khẩu
             </label>
             <div style={{ position: 'relative' }}>
@@ -120,7 +120,7 @@ export default function Login() {
               />
               <button type="button" onClick={() => setShowPass(!showPass)} style={{
                 position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#94a3b8',
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text-muted)',
               }}>
                 {showPass ? '🙈' : '👁️'}
               </button>
@@ -139,14 +139,14 @@ export default function Login() {
 
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0' }}>
-          <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>hoặc</span>
-          <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
+          <div style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>hoặc</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: 14, color: '#64748b', margin: 0 }}>
+        <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
           Chưa có tài khoản?{' '}
-          <Link to="/register" style={{ color: '#0ea5e9', fontWeight: 600, textDecoration: 'none' }}>
+          <Link to="/register" style={{ color: 'var(--brand-primary)', fontWeight: 600, textDecoration: 'none' }}>
             Đăng ký miễn phí →
           </Link>
         </p>

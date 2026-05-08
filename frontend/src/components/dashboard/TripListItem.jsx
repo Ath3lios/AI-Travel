@@ -4,9 +4,9 @@ import { formatCurrencyVND, formatRelativeDate } from '../../utils/formatters'
 
 function getAccentGradient(destination) {
   const d = destination || ''
-  if (/đà nẵng|nha trang|phú quốc|mũi né|hạ long/i.test(d)) return 'linear-gradient(135deg,#38bdf8,#0ea5e9)'
+  if (/đà nẵng|nha trang|phú quốc|mũi né|hạ long/i.test(d)) return 'linear-gradient(135deg,#22d3ee,#818cf8)'
   if (/sapa|đà lạt|ninh bình|tam cốc|mộc châu/i.test(d)) return 'linear-gradient(135deg,#34d399,#10b981)'
-  return 'linear-gradient(135deg,#a5b4fc,#6366f1)'
+  return 'linear-gradient(135deg,#818cf8,#22d3ee)'
 }
 
 function TripListItem({ trip, onClick, onDelete, index }) {
@@ -17,40 +17,38 @@ function TripListItem({ trip, onClick, onDelete, index }) {
   )
   const ago = formatRelativeDate(trip.created_at)
   const budgetText = formatCurrencyVND(trip.budget)
+  const coverStyle = imgUrl ? `url(${imgUrl}) center/cover` : getAccentGradient(trip.destination)
 
   return (
     <div
       onClick={onClick}
       style={{
         display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-        background: 'white',
-        borderRadius: 16,
-        padding: '12px 14px',
-        border: '1px solid #eef0f3',
+        flexDirection: 'column',
+        background: 'var(--surface-panel)',
+        borderRadius: 24,
+        overflow: 'hidden',
+        border: '1px solid var(--border-soft)',
         cursor: 'pointer',
         transition: 'all 0.2s',
         animation: `fadeUp 0.4s ${index * 0.06}s both`,
+        minHeight: 320,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.07)'
-        e.currentTarget.style.borderColor = '#dde0e8'
+        e.currentTarget.style.boxShadow = '0 18px 36px rgba(14,66,108,0.14)'
+        e.currentTarget.style.borderColor = '#b7d5e8'
+        e.currentTarget.style.transform = 'translateY(-4px)'
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.boxShadow = 'none'
-        e.currentTarget.style.borderColor = '#eef0f3'
+        e.currentTarget.style.borderColor = 'rgba(206,225,240,0.9)'
+        e.currentTarget.style.transform = 'translateY(0)'
       }}
     >
       <div style={{
-        width: 52,
-        height: 52,
-        borderRadius: 12,
-        flexShrink: 0,
-        overflow: 'hidden',
-        background: getAccentGradient(trip.destination),
-        boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
         position: 'relative',
+        minHeight: 160,
+        background: coverStyle,
       }}>
         {imgUrl && (
           <img
@@ -69,59 +67,123 @@ function TripListItem({ trip, onClick, onDelete, index }) {
             onLoad={(e) => { e.currentTarget.style.display = 'block' }}
           />
         )}
-      </div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 14,
-          fontWeight: 700,
-          color: '#0f172a',
-          marginBottom: 2,
-          fontFamily: "'Fraunces', serif",
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(180deg, rgba(8,25,44,0.08) 0%, rgba(6,20,37,0.68) 100%)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: 14,
+          left: 14,
+          display: 'flex',
+          gap: 8,
+          flexWrap: 'wrap',
         }}>
-          {trip.destination}
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'white',
+            background: 'rgba(255,255,255,0.18)',
+            border: '1px solid rgba(255,255,255,0.22)',
+            borderRadius: 999,
+            padding: '6px 10px',
+            backdropFilter: 'blur(8px)',
+          }}>
+            {trip.days} ngày
+          </span>
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'white',
+            background: 'rgba(11,132,255,0.24)',
+            border: '1px solid rgba(255,255,255,0.16)',
+            borderRadius: 999,
+            padding: '6px 10px',
+            backdropFilter: 'blur(8px)',
+          }}>
+            {totalSpots} địa điểm
+          </span>
         </div>
-        <div style={{ fontSize: 11, color: '#94a3b8' }}>
-          {trip.days} ngày · {totalSpots} địa điểm · {ago}
+        <div style={{ position: 'absolute', right: 14, top: 14 }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(trip.id, e) }}
+            style={{
+              background: 'rgba(255,255,255,0.18)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              cursor: 'pointer',
+              fontSize: 14,
+              color: 'white',
+              padding: '8px 9px',
+              borderRadius: 12,
+              transition: 'all 0.2s',
+              flexShrink: 0,
+              backdropFilter: 'blur(8px)',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#b91c1c' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.color = 'white' }}
+          >
+            🗑
+          </button>
+        </div>
+        <div style={{
+          position: 'absolute',
+          left: 14,
+          right: 14,
+          bottom: 14,
+        }}>
+          <div style={{
+            fontSize: 21,
+            fontWeight: 700,
+            color: '#fff',
+            marginBottom: 4,
+            fontFamily: "'Fraunces', serif",
+          }}>
+            {trip.destination}
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(239,246,255,0.82)' }}>
+            Tạo {ago}
+          </div>
         </div>
       </div>
 
-      {budgetText && (
-        <span style={{
-          fontSize: 11,
-          color: '#64748b',
-          background: '#f1f5f9',
-          border: '1px solid #e2e8f0',
-          borderRadius: 999,
-          padding: '3px 8px',
-          flexShrink: 0,
-          whiteSpace: 'nowrap',
-        }}>
-          {budgetText}
-        </span>
-      )}
+      <div style={{ padding: 18, display: 'grid', gap: 14, flex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+          <div style={{ background: 'var(--surface-panel-alt)', borderRadius: 16, border: '1px solid var(--border-soft)', padding: '12px 14px' }}>
+            <div style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7b97ad', marginBottom: 4 }}>
+              Ngân sách
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' }}>
+              {budgetText || 'Chưa có'}
+            </div>
+          </div>
+          <div style={{ background: 'var(--surface-panel-alt)', borderRadius: 16, border: '1px solid var(--border-soft)', padding: '12px 14px' }}>
+            <div style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7b97ad', marginBottom: 4 }}>
+              Trạng thái
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-strong)' }}>
+              Sẵn sàng xem
+            </div>
+          </div>
+        </div>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); onDelete(trip.id, e) }}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: 14,
-          color: '#cbd5e1',
-          padding: '4px 6px',
-          borderRadius: 8,
-          transition: 'all 0.2s',
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fee2e2' }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = '#cbd5e1'; e.currentTarget.style.background = 'none' }}
-      >
-        🗑
-      </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{
+            fontSize: 12,
+            color: 'var(--brand-primary)',
+            background: 'rgba(34,211,238,0.12)',
+            border: '1px solid rgba(34,211,238,0.24)',
+            borderRadius: 999,
+            padding: '7px 10px',
+            whiteSpace: 'nowrap',
+          }}>
+            Mở chi tiết
+          </span>
+          <span style={{ fontSize: 12, color: '#6b8194' }}>
+            AI itinerary
+          </span>
+        </div>
+      </div>
     </div>
   )
 }

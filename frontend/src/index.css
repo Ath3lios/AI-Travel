@@ -5,22 +5,120 @@
 @tailwind utilities;
 
 :root {
-  --brand-primary: #1f5fa8;
-  --brand-primary-2: #2a86d1;
-  --brand-accent: #18a999;
-  --brand-deep: #0f3d66;
+  --brand-primary: #22d3ee;
+  --brand-primary-2: #818cf8;
+  --brand-accent: #10b981;
+  --brand-deep: #0b1120;
+  --accent-indigo: #818cf8;
+  --app-bg: #f4fbfd;
+  --app-bg-soft: #e9f6fb;
+  --app-bg-elevated: #ffffff;
+  --surface-card: rgba(255, 255, 255, 0.88);
+  --surface-panel: #ffffff;
+  --surface-panel-alt: #f0f9ff;
+  --surface-muted: #e6f4f7;
+  --surface-strong: #d7f7fb;
   --text-strong: #0f172a;
-  --text-muted: #4b6479;
-  --surface-card: rgba(255, 255, 255, 0.82);
-  --border-soft: rgba(224, 236, 248, 0.95);
+  --text-soft: #1e293b;
+  --text-muted: #475569;
+  --border-soft: rgba(148, 163, 184, 0.28);
+  --border-strong: rgba(100, 116, 139, 0.4);
+  --shadow-soft: 0 16px 32px rgba(11, 17, 32, 0.1);
+  --nav-bg: rgba(255, 255, 255, 0.86);
+  --nav-border: rgba(148, 163, 184, 0.22);
+  --nav-shadow: 0 8px 28px rgba(11, 17, 32, 0.08);
+  --nav-link-hover: #ecfeff;
+  --button-ghost-bg: #ffffff;
+  --button-ghost-border: rgba(148, 163, 184, 0.25);
+  --button-solid-bg: #0b1120;
+  --button-solid-hover: #1e293b;
+  --hero-bg-start: #f6feff;
+  --hero-bg-mid: #e9f8fd;
+  --hero-bg-end: #f4fbfd;
+  --hero-pattern: rgba(34, 211, 238, 0.08);
+  --hero-copy: #0f172a;
+  --hero-heading: #0b1120;
+  --hero-lead: #475569;
+  --home-outline-bg: rgba(255,255,255,0.92);
+  --home-outline-text: #0f172a;
+  --home-outline-border: rgba(148, 163, 184, 0.25);
+  --home-section-shell: rgba(255,255,255,0.9);
+  --home-footer-border: rgba(148,163,184,0.24);
+  --home-footer-text: #475569;
   --home-sky: #a9dfff;
   --home-sky-top: #4ab5f4;
   --home-sky-mid: #7bc8f7;
   --home-sky-bottom: #d5efff;
 }
 
+html[data-theme='dark'] {
+  --app-bg: #0b1120;
+  --app-bg-soft: #111827;
+  --app-bg-elevated: #111827;
+  --surface-card: rgba(30, 41, 59, 0.88);
+  --surface-panel: #1e293b;
+  --surface-panel-alt: #243244;
+  --surface-muted: #2a3a4f;
+  --surface-strong: #20364a;
+  --text-strong: #f8fafc;
+  --text-soft: #dbe7f1;
+  --text-muted: #94a3b8;
+  --border-soft: rgba(148, 163, 184, 0.2);
+  --border-strong: rgba(148, 163, 184, 0.34);
+  --shadow-soft: 0 18px 38px rgba(2, 6, 23, 0.42);
+  --nav-bg: rgba(11, 17, 32, 0.88);
+  --nav-border: rgba(148, 163, 184, 0.16);
+  --nav-shadow: 0 12px 34px rgba(2, 6, 23, 0.38);
+  --nav-link-hover: #243244;
+  --button-ghost-bg: #1e293b;
+  --button-ghost-border: rgba(148, 163, 184, 0.18);
+  --button-solid-bg: #22d3ee;
+  --button-solid-hover: #67e8f9;
+  --hero-bg-start: #0b1120;
+  --hero-bg-mid: #10192d;
+  --hero-bg-end: #0b1120;
+  --hero-pattern: rgba(34,211,238,0.1);
+  --hero-copy: #f8fafc;
+  --hero-heading: #f8fafc;
+  --hero-lead: #cbd5e1;
+  --home-outline-bg: rgba(30,41,59,0.88);
+  --home-outline-text: #f8fafc;
+  --home-outline-border: rgba(148,163,184,0.18);
+  --home-section-shell: rgba(30,41,59,0.82);
+  --home-footer-border: rgba(148,163,184,0.18);
+  --home-footer-text: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: 'DM Sans', sans-serif;
   color: var(--text-strong);
+  background: var(--app-bg);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input,
+select,
+textarea {
+  color: var(--text-strong);
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.28);
 }

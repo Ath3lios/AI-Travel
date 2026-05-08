@@ -231,7 +231,7 @@ function SampleModal({ guide, onClose }) {
   return (
     <>
       <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000, backdropFilter:'blur(3px)', animation:'fadeIn 0.2s ease' }} />
-      <div className="guide-modal-sheet" style={{ position:'fixed', bottom:0, left:0, right:0, background:'#f7f7f9', borderRadius:'24px 24px 0 0', zIndex:1001, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 -8px 40px rgba(0,0,0,0.15)', fontFamily:"'DM Sans', sans-serif" }}>
+      <div className="guide-modal-sheet" style={{ position:'fixed', bottom:0, left:0, right:0, background:'var(--surface-panel-alt)', borderRadius:'24px 24px 0 0', zIndex:1001, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 -8px 40px rgba(0,0,0,0.15)', fontFamily:"'DM Sans', sans-serif" }}>
         {/* Hero */}
         <div style={{ position:'relative', height:200, background: imgUrl ? `url(${imgUrl}) center/cover` : 'linear-gradient(135deg,#c7d2fe,#a5b4fc)', borderRadius:'24px 24px 0 0', overflow:'hidden' }}>
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)' }} />
@@ -243,31 +243,31 @@ function SampleModal({ guide, onClose }) {
         </div>
         <div style={{ padding:'20px 20px 48px', maxWidth:680, margin:'0 auto' }}>
           {guide.itinerary?.trip_summary && (
-            <div style={{ background:'linear-gradient(135deg,#eef2ff,#f5f3ff)', borderRadius:14, padding:'14px 16px', border:'1px solid #e0e7ff', marginBottom:20 }}>
+            <div style={{ background:'var(--surface-strong)', borderRadius:14, padding:'14px 16px', border:'1px solid var(--border-soft)', marginBottom:20 }}>
               <div style={{ display:'flex', flexWrap:'wrap', gap:10 }}>
-                {guide.itinerary.trip_summary.best_time && <span style={{ fontSize:13, color:'#4f46e5' }}>🌤️ {guide.itinerary.trip_summary.best_time}</span>}
-                {guide.itinerary.trip_summary.estimated_cost && <span style={{ fontSize:13, color:'#16a34a' }}>💰 {guide.itinerary.trip_summary.estimated_cost}</span>}
-                {guide.itinerary.trip_summary.weather_note && <span style={{ fontSize:13, color:'#64748b' }}>📋 {guide.itinerary.trip_summary.weather_note}</span>}
+                {guide.itinerary.trip_summary.best_time && <span style={{ fontSize:13, color:'var(--brand-primary)' }}>🌤️ {guide.itinerary.trip_summary.best_time}</span>}
+                {guide.itinerary.trip_summary.estimated_cost && <span style={{ fontSize:13, color:'var(--brand-accent)' }}>💰 {guide.itinerary.trip_summary.estimated_cost}</span>}
+                {guide.itinerary.trip_summary.weather_note && <span style={{ fontSize:13, color:'var(--text-muted)' }}>📋 {guide.itinerary.trip_summary.weather_note}</span>}
               </div>
             </div>
           )}
-          <div style={{ fontSize:13, fontWeight:700, color:'#94a3b8', marginBottom:12, textTransform:'uppercase', letterSpacing:0.5 }}>Lịch trình</div>
+          <div style={{ fontSize:13, fontWeight:700, color:'var(--text-muted)', marginBottom:12, textTransform:'uppercase', letterSpacing:0.5 }}>Lịch trình</div>
           <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
             {days.map((day, i) => (
-              <div key={i} style={{ background:'white', borderRadius:14, border:'1px solid #e8ecf0', padding:'14px 16px' }}>
-                <div style={{ fontSize:15, fontWeight:700, color:'#0f172a', marginBottom:8, fontFamily:"'Fraunces', serif" }}>Ngày {day.day} — {day.title}</div>
+              <div key={i} style={{ background:'var(--surface-panel)', borderRadius:14, border:'1px solid var(--border-soft)', padding:'14px 16px' }}>
+                <div style={{ fontSize:15, fontWeight:700, color:'var(--text-strong)', marginBottom:8, fontFamily:"'Fraunces', serif" }}>Ngày {day.day} — {day.title}</div>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                   {(day.schedule || []).map((s, j) => (
-                    <span key={j} style={{ fontSize:12, background:'#f1f5f9', color:'#475569', padding:'3px 10px', borderRadius:999 }}>{s.place}</span>
+                    <span key={j} style={{ fontSize:12, background:'var(--surface-muted)', color:'var(--text-soft)', padding:'3px 10px', borderRadius:999 }}>{s.place}</span>
                   ))}
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ background:'linear-gradient(135deg,#eef2ff,#f5f3ff)', borderRadius:16, padding:'18px', border:'1px solid #e0e7ff', textAlign:'center' }}>
-            <div style={{ fontSize:14, color:'#4f46e5', fontWeight:600, marginBottom:4 }}>Muốn có lịch trình riêng?</div>
-            <div style={{ fontSize:13, color:'#64748b', marginBottom:14 }}>AI sẽ tạo lịch cá nhân hóa theo ngân sách & sở thích của bạn</div>
-            <button onClick={onClose} style={{ background:'linear-gradient(135deg,#6366f1,#8b5cf6)', color:'white', padding:'12px 28px', borderRadius:12, border:'none', fontSize:14, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 16px rgba(99,102,241,0.35)', fontFamily:'inherit' }}>
+          <div style={{ background:'var(--surface-strong)', borderRadius:16, padding:'18px', border:'1px solid var(--border-soft)', textAlign:'center' }}>
+            <div style={{ fontSize:14, color:'var(--brand-primary)', fontWeight:600, marginBottom:4 }}>Muốn có lịch trình riêng?</div>
+            <div style={{ fontSize:13, color:'var(--text-muted)', marginBottom:14 }}>AI sẽ tạo lịch cá nhân hóa theo ngân sách & sở thích của bạn</div>
+            <button onClick={onClose} style={{ background:'linear-gradient(135deg, var(--brand-primary), var(--accent-indigo))', color:'#0b1120', padding:'12px 28px', borderRadius:12, border:'none', fontSize:14, fontWeight:700, cursor:'pointer', boxShadow:'0 4px 16px rgba(34,211,238,0.28)', fontFamily:'inherit' }}>
               ✨ Tạo lịch trình của tôi
             </button>
           </div>
@@ -333,7 +333,7 @@ export default function Dashboard() {
   return (
     <div className='dashboard-page' style={{ fontFamily:"'DM Sans', sans-serif" }}>
       <style>{`
-        .dashboard-page { min-height: 100vh; background: #f7f7f9; }
+        .dashboard-page { min-height: 100vh; background: linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg-soft) 55%, var(--app-bg) 100%); }
         /* Mobile: single col scroll */
         .guides-scroll { display:flex; gap:12px; overflow-x:auto; padding:4px 20px 12px; scrollbar-width:none; cursor:grab; }
         .guides-scroll::-webkit-scrollbar { display:none; }
@@ -342,21 +342,22 @@ export default function Dashboard() {
         /* Desktop: hide scroll, show grid */
         .guides-grid-desktop { display:none; }
 
-        .dashboard-title { font-family:'Fraunces', serif; font-size:24px; font-weight:600; color:#0f172a; margin:0; letter-spacing:-0.5px; }
-        .section-title { font-size:16px; font-weight:700; color:#0f172a; margin:0 0 12px; }
-        .section-subtitle { margin:-6px 0 10px; font-size:12px; color:#94a3b8; }
+        .dashboard-title { font-family:'Fraunces', serif; font-size:24px; font-weight:600; color:var(--text-strong); margin:0; letter-spacing:-0.5px; }
+        .section-title { font-size:16px; font-weight:700; color:var(--text-strong); margin:0 0 12px; }
+        .section-subtitle { margin:-6px 0 10px; font-size:12px; color:var(--text-muted); }
         .section-block { margin-bottom: 28px; }
         .create-form-wrap { margin-bottom:24px; animation:fadeUp 0.3s both; }
         .trips-head { margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
-        .trips-count { font-size:12px; color:#94a3b8; }
+        .trips-count { font-size:12px; color:var(--text-muted); }
         .search-wrap { position:relative; margin-bottom:14px; }
-        .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:13px; color:#94a3b8; pointer-events:none; }
-        .search-input { width:100%; box-sizing:border-box; border:1px solid #e2e8f0; border-radius:12px; padding:10px 34px 10px 32px; font-size:13px; outline:none; background:white; font-family:inherit; }
-        .search-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); border:none; background:#f1f5f9; color:#64748b; border-radius:999px; width:20px; height:20px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; }
+        .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--text-muted); pointer-events:none; }
+        .search-input { width:100%; box-sizing:border-box; border:1px solid var(--border-soft); border-radius:12px; padding:10px 34px 10px 32px; font-size:13px; outline:none; background:var(--surface-panel); color:var(--text-strong); font-family:inherit; }
+        .search-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); border:none; background:var(--surface-muted); color:var(--text-muted); border-radius:999px; width:20px; height:20px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; }
         .new-trip-btn { display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:14px; font-size:14px; font-weight:600; border:none; cursor:pointer; transition:all 0.2s; font-family:inherit; white-space:nowrap; }
-        .new-trip-btn.active { background:#f1f5f9; color:#64748b; }
-        .new-trip-btn.inactive { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; box-shadow:0 4px 16px rgba(99,102,241,0.35); }
-        .new-trip-btn.inactive:hover { box-shadow:0 6px 24px rgba(99,102,241,0.45); transform:translateY(-1px); }
+        .new-trip-btn.active { background:var(--surface-muted); color:var(--text-muted); }
+        .new-trip-btn.inactive { background:linear-gradient(135deg, var(--brand-primary), var(--accent-indigo)); color:#0b1120; box-shadow:0 4px 16px rgba(34,211,238,0.28); }
+        .new-trip-btn.inactive:hover { box-shadow:0 6px 24px rgba(34,211,238,0.36); transform:translateY(-1px); }
+        .trips-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; }
 
         /* Centered layout */
         @media (min-width: 900px) {
@@ -369,6 +370,11 @@ export default function Dashboard() {
         @media (max-width: 899px) {
           .dashboard-header { padding:20px 20px 0; display:flex; justify-content:space-between; align-items:center; gap:10px; }
           .dashboard-root { padding:20px 20px 60px; }
+          .trips-grid { grid-template-columns:1fr; }
+        }
+
+        @media (min-width: 900px) and (max-width: 1160px) {
+          .trips-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
         }
 
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
@@ -385,7 +391,6 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-root">
-
         {showForm && (
           <div className='create-form-wrap'>
             <TripForm onTripCreated={handleTripCreated} />
@@ -442,7 +447,7 @@ export default function Dashboard() {
               <EmptyState message='Chưa có lịch trình. Nhấn ' accentText='✨ Tạo mới!' />
             )
           ) : (
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            <div className='trips-grid'>
               {filteredTrips.map((trip, idx) => (
                 <TripListItem key={trip.id} trip={trip} index={idx} onClick={() => navigate(`/trips/${trip.id}`)} onDelete={handleDelete} />
               ))}

@@ -31,6 +31,45 @@ def _get_owned_trip_or_403(db: Session, trip_id: int, current_user):
     return trip
 
 
+def _delete_trip_catalog_rows(db: Session, trip_id: int) -> None:
+    db.query(Activity).filter(Activity.trip_id == trip_id).delete(synchronize_session=False)
+    db.query(Hotel).filter(Hotel.trip_id == trip_id).delete(synchronize_session=False)
+    db.query(Destination).filter(Destination.trip_id == trip_id).delete(synchronize_session=False)
+
+
+def _delete_legacy_catalog_rows_for_trip(db: Session, trip) -> None:
+    destination_name = (trip.destination or "").strip()
+    if not destination_name:
+        return
+    same_destination_trip_count = (
+        db.query(Trip)
+        .filter(Trip.destination.ilike(destination_name))
+        .count()
+    )
+    if same_destination_trip_count != 1:
+        return
+    legacy_destination_ids = [
+        destination_id
+        for (destination_id,) in db.query(Destination.id)
+        .filter(
+            Destination.trip_id.is_(None),
+            (Destination.city.ilike(destination_name) | Destination.name.ilike(destination_name)),
+        )
+        .all()
+    ]
+    if not legacy_destination_ids:
+        return
+    db.query(Activity).filter(
+        Activity.trip_id.is_(None),
+        Activity.destination_id.in_(legacy_destination_ids),
+    ).delete(synchronize_session=False)
+    db.query(Hotel).filter(
+        Hotel.trip_id.is_(None),
+        Hotel.destination_id.in_(legacy_destination_ids),
+    ).delete(synchronize_session=False)
+    db.query(Destination).filter(Destination.id.in_(legacy_destination_ids)).delete(synchronize_session=False)
+
+
 def trip_to_dict(trip) -> dict:
     return {
         'id': str(trip.id),
@@ -47,16 +86,18 @@ def trip_to_dict(trip) -> dict:
 # CATALOG SYNC
 # ──────────────────────────────────────────────────────────────
 
-def _upsert_destination(db: Session, city: str) -> int | None:
+def _upsert_destination(db: Session, city: str, trip_id: int) -> int | None:
     """Trả về destination.id cho city, tạo mới nếu chưa có."""
     if not city:
         return None
     existing = db.query(Destination).filter(
+        Destination.trip_id == trip_id,
         Destination.city.ilike(city.strip())
     ).first()
     if existing:
         return existing.id
     dest = Destination(
+        trip_id=trip_id,
         name=city.strip(),
         city=city.strip(),
         created_at=datetime.utcnow(),
@@ -66,7 +107,7 @@ def _upsert_destination(db: Session, city: str) -> int | None:
     return dest.id
 
 
-def _sync_itinerary_to_catalog(db: Session, itinerary: dict, destination_city: str) -> None:
+def _sync_itinerary_to_catalog(db: Session, itinerary: dict, destination_city: str, trip_id: int) -> None:
     """
     Đọc itinerary JSON vừa sinh ra và upsert các place vào catalog DB.
 
@@ -79,7 +120,7 @@ def _sync_itinerary_to_catalog(db: Session, itinerary: dict, destination_city: s
         return
 
     try:
-        destination_id = _upsert_destination(db, destination_city)
+        destination_id = _upsert_destination(db, destination_city, trip_id)
 
         # ── Hotels từ accommodation ──────────────────────────
         for hotel in itinerary.get("accommodation") or []:
@@ -92,11 +133,13 @@ def _sync_itinerary_to_catalog(db: Session, itinerary: dict, destination_city: s
             if "#" in name and "fallback" in str(hotel.get("source", "")).lower():
                 continue
             exists = db.query(Hotel).filter(
+                Hotel.trip_id == trip_id,
                 Hotel.destination_id == destination_id,
                 Hotel.name.ilike(name),
             ).first()
             if not exists:
                 db.add(Hotel(
+                    trip_id=trip_id,
                     destination_id=destination_id,
                     name=name,
                     address=str(hotel.get("area") or destination_city),
@@ -144,11 +187,13 @@ def _sync_itinerary_to_catalog(db: Session, itinerary: dict, destination_city: s
                     category = "attraction"
 
                 exists = db.query(Activity).filter(
+                    Activity.trip_id == trip_id,
                     Activity.destination_id == destination_id,
                     Activity.name.ilike(name),
                 ).first()
                 if not exists:
                     db.add(Activity(
+                        trip_id=trip_id,
                         destination_id=destination_id,
                         name=name,
                         category=category,
@@ -194,7 +239,7 @@ def create_trip(
     db.refresh(new_trip)
 
     # ── Đồng bộ catalog sau khi commit trip ──
-    _sync_itinerary_to_catalog(db, itinerary, trip_data.destination)
+    _sync_itinerary_to_catalog(db, itinerary, trip_data.destination, new_trip.id)
 
     return trip_to_dict(new_trip)
 
@@ -249,7 +294,8 @@ def regenerate_trip(
     db.refresh(trip)
 
     # ── Đồng bộ catalog sau khi regenerate ──
-    _sync_itinerary_to_catalog(db, itinerary, trip_data.destination)
+    _delete_trip_catalog_rows(db, trip.id)
+    _sync_itinerary_to_catalog(db, itinerary, trip_data.destination, trip.id)
 
     return trip_to_dict(trip)
 
@@ -282,6 +328,8 @@ def delete_trip(
 ):
     parsed_trip_id = _parse_trip_id(trip_id)
     trip = _get_owned_trip_or_403(db, parsed_trip_id, current_user)
+    _delete_trip_catalog_rows(db, trip.id)
+    _delete_legacy_catalog_rows_for_trip(db, trip)
     db.delete(trip)
     db.commit()
     return {'message': 'Da xoa thanh cong'}

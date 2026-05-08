@@ -6,8 +6,15 @@ export default function CTASection({ user }) {
       <div className="cta-box">
         <div className="cta-orb a" />
         <div className="cta-orb b" />
+        <div className="cta-grid-pattern" />
 
         <div className="cta-content">
+          <div className="cta-mini-cards" aria-hidden="true">
+            <div className="cta-mini-card">✈️ Lịch trình theo ngày</div>
+            <div className="cta-mini-card">💸 Có ước tính ngân sách</div>
+            <div className="cta-mini-card">🧭 Tùy chỉnh theo sở thích</div>
+          </div>
+
           <h2 className="cta-title">
             Sẵn sàng cho chuyến đi tiếp theo?<br />
             <em>Bắt đầu ngay hôm nay</em>

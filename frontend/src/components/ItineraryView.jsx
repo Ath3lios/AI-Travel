@@ -16,8 +16,8 @@ const BUDGET_KEYS = {
 }
 
 const DAY_COLORS = [
-  '#6366f1', '#0ea5e9', '#10b981', '#f59e0b',
-  '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6',
+  '#22d3ee', '#818cf8', '#10b981', '#38bdf8',
+  '#34d399', '#a5b4fc', '#2dd4bf', '#67e8f9',
 ]
 
 const PLACE_ICON_RULES = [
@@ -138,6 +138,24 @@ function formatBudgetValue(value) {
   return String(value)
 }
 
+function parseBudgetNumber(value) {
+  if (value == null) return 0
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  const text = String(value)
+  const normalized = text.replace(/\./g, '').replace(/,/g, '')
+  const matches = normalized.match(/\d+/g)
+  if (!matches?.length) return 0
+  const number = Number(matches[matches.length - 1])
+  return Number.isFinite(number) ? number : 0
+}
+
+function formatCompactCurrency(value) {
+  const amount = Number(value || 0)
+  if (!amount) return '0 đ'
+  if (amount >= 1000000) return `${(amount / 1000000).toFixed(amount >= 10000000 ? 0 : 1).replace(/\.0$/, '')} triệu`
+  return `${Math.round(amount / 1000)}k`
+}
+
 let _goongLoadPromise = null
 
 function loadGoongSDK() {
@@ -250,18 +268,18 @@ function GoongMap({ places, activePlace, dayIndex = 0 }) {
   if (!valid.length) return null
 
   return (
-    <div className="goong-map-shell" style={{ borderRadius:24, overflow:'hidden', background:'white', boxShadow:'0 8px 30px rgba(0,0,0,0.04)', display:'flex', flexDirection:'column', height:'100%', width:'100%', maxWidth:'100%', boxSizing:'border-box', border:'1px solid #f1f5f9' }}>
-      <div style={{ padding:'14px 20px', background:'white', borderBottom:'1px solid #f1f5f9', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex: 10 }}>
+    <div className="goong-map-shell" style={{ borderRadius:24, overflow:'hidden', background:'var(--surface-panel)', boxShadow:'0 8px 30px rgba(0,0,0,0.04)', display:'flex', flexDirection:'column', height:'100%', width:'100%', maxWidth:'100%', boxSizing:'border-box', border:'1px solid var(--border-soft)' }}>
+      <div style={{ padding:'14px 20px', background:'var(--surface-panel)', borderBottom:'1px solid var(--border-soft)', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex: 10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <span style={{ width:12, height:12, borderRadius:'50%', background:activeColor, display:'inline-block', boxShadow:`0 0 0 3px ${activeColor}22` }} />
-          <span style={{ fontSize:15, fontWeight:700, color:'#0f172a', letterSpacing:'-0.3px' }}>Bản đồ lộ trình</span>
+          <span style={{ fontSize:15, fontWeight:700, color:'var(--text-strong)', letterSpacing:'-0.3px' }}>Bản đồ lộ trình</span>
         </div>
-        <span style={{ fontSize:12, color:'#64748b', fontWeight:500, background:'#f8fafc', padding:'4px 10px', borderRadius:20 }}>{valid.length} điểm</span>
+        <span style={{ fontSize:12, color:'var(--text-muted)', fontWeight:500, background:'var(--surface-muted)', padding:'4px 10px', borderRadius:20 }}>{valid.length} điểm</span>
       </div>
-      <div style={{ position:'relative', minHeight:420, flex:1, width:'100%', background:'#f8fafc' }}>
+      <div style={{ position:'relative', minHeight:420, flex:1, width:'100%', background:'var(--surface-muted)' }}>
         {!sdkReady && (
-          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'#64748b', fontSize:14, fontWeight:500 }}>
-            <span style={{ display:'inline-block', width:24, height:24, border:'3px solid #e2e8f0', borderTopColor:activeColor, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'var(--text-muted)', fontSize:14, fontWeight:500 }}>
+            <span style={{ display:'inline-block', width:24, height:24, border:'3px solid var(--border-soft)', borderTopColor:activeColor, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
             Đang tải bản đồ khu vực...
           </div>
         )}
@@ -288,7 +306,7 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
 
       <div className="place-modal-sheet" style={{
           position:'fixed', bottom:0, left:0, right:0,
-          background:'white',
+          background:'var(--surface-panel)',
           zIndex:1001, maxHeight:'88vh', overflowY:'auto',
           animation:'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)',
           boxShadow:'0 -20px 40px rgba(0,0,0,0.1)',
@@ -297,56 +315,56 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
           '--sheet-left': `${Math.round(modalRect?.left || 16)}px`,
         }}>
         <div style={{ display:'flex', justifyContent:'center', padding:'16px 0 0' }}>
-          <div style={{ width:48, height:5, borderRadius:999, background:'#e2e8f0' }} />
+          <div style={{ width:48, height:5, borderRadius:999, background:'var(--border-soft)' }} />
         </div>
         
         <button onClick={onClose} style={{
           position:'absolute', top:20, right:20,
           width:36, height:36, borderRadius:'50%',
-          background:'#f8fafc', border:'1px solid #e2e8f0', cursor:'pointer',
-          fontSize:20, display:'flex', alignItems:'center', justifyContent:'center', color:'#64748b',
+          background:'var(--surface-muted)', border:'1px solid var(--border-soft)', cursor:'pointer',
+          fontSize:20, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-muted)',
           transition:'all 0.2s', boxShadow:'0 2px 4px rgba(0,0,0,0.02)'
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a' }}
-        onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#64748b' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-panel-alt)'; e.currentTarget.style.color = 'var(--text-strong)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface-muted)'; e.currentTarget.style.color = 'var(--text-muted)' }}
         >×</button>
 
         <div style={{ padding:'28px 28px 48px' }}>
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16, marginBottom:6, paddingRight:48 }}>
-            <h2 style={{ fontFamily:"'Fraunces', serif", fontSize:32, fontWeight:600, color:'#0f172a', margin:0, lineHeight:1.15, letterSpacing:'-0.5px' }}>
+            <h2 style={{ fontFamily:"'Fraunces', serif", fontSize:32, fontWeight:600, color:'var(--text-strong)', margin:0, lineHeight:1.15, letterSpacing:'-0.5px' }}>
               {item.place}
             </h2>
             {item.estimated_cost && (
-              <span style={{ fontSize:13, padding:'6px 12px', borderRadius:10, background:'#ecfdf5', color:'#059669', fontWeight:700, whiteSpace:'nowrap', flexShrink:0, border:'1px solid #a7f3d0' }}>
+              <span style={{ fontSize:13, padding:'6px 12px', borderRadius:10, background:'rgba(16,185,129,0.14)', color:'var(--brand-accent)', fontWeight:700, whiteSpace:'nowrap', flexShrink:0, border:'1px solid rgba(16,185,129,0.24)' }}>
                 {item.estimated_cost}
               </span>
             )}
           </div>
 
           {item.address && (
-            <div style={{ fontSize:14, color:'#64748b', marginBottom:24, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:14, color:'var(--text-muted)', marginBottom:24, display:'flex', alignItems:'center', gap:6 }}>
               <span style={{ fontSize: 16 }}>📍</span> {item.address}
             </div>
           )}
 
           {item.description && (
-            <div style={{ marginBottom:28, background:'#f8fafc', padding:'20px', borderRadius:20 }}>
-              <p style={{ fontSize:15, color:'#475569', lineHeight:1.8, margin:0 }}>{item.description}</p>
+            <div style={{ marginBottom:28, background:'var(--surface-muted)', padding:'20px', borderRadius:20 }}>
+              <p style={{ fontSize:15, color:'var(--text-soft)', lineHeight:1.8, margin:0 }}>{item.description}</p>
             </div>
           )}
 
           {item.highlights?.length > 0 && (
             <div style={{ marginBottom:28 }}>
-              <div style={{ fontSize:16, fontWeight:700, color:'#0f172a', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:'var(--text-strong)', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>
                 <span style={{ fontSize: 20 }}>✨</span> Điểm nổi bật
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
                 {item.highlights.map((h, i) => (
-                  <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 16px', background:'white', border:'1px solid #f1f5f9', borderRadius:16, boxShadow:'0 2px 8px rgba(0,0,0,0.02)' }}>
+                  <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 16px', background:'var(--surface-panel)', border:'1px solid var(--border-soft)', borderRadius:16, boxShadow:'0 2px 8px rgba(0,0,0,0.02)' }}>
                     <div style={{ width:24, height:24, borderRadius:'50%', background:activeColor, color:'white', fontSize:12, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2, boxShadow:`0 2px 6px ${activeColor}40` }}>
                       {i+1}
                     </div>
-                    <span style={{ fontSize:15, color:'#334155', lineHeight:1.6 }}>{h}</span>
+                    <span style={{ fontSize:15, color:'var(--text-soft)', lineHeight:1.6 }}>{h}</span>
                   </div>
                 ))}
               </div>
@@ -354,13 +372,13 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
           )}
 
           {tipsArray.length > 0 && (
-            <div style={{ background:'#fffbeb', borderRadius:20, padding:'20px', marginBottom:28, border:'1px solid #fef3c7' }}>
-              <div style={{ fontSize:15, fontWeight:700, color:'#b45309', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ background:'rgba(16,185,129,0.10)', borderRadius:20, padding:'20px', marginBottom:28, border:'1px solid rgba(16,185,129,0.20)' }}>
+              <div style={{ fontSize:15, fontWeight:700, color:'var(--brand-accent)', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
                 <span style={{ fontSize: 20 }}>💡</span> Mẹo du lịch
               </div>
               <ul style={{ margin:0, padding:'0 0 0 20px', display:'flex', flexDirection:'column', gap:10 }}>
                 {tipsArray.map((tip, i) => (
-                  <li key={i} style={{ fontSize:14, color:'#92400e', lineHeight:1.6, paddingLeft:4 }}>{tip}</li>
+                  <li key={i} style={{ fontSize:14, color:'var(--text-soft)', lineHeight:1.6, paddingLeft:4 }}>{tip}</li>
                 ))}
               </ul>
             </div>
@@ -369,13 +387,13 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
           {(item.best_for || item.nearby) && (
             <div style={{ display:'grid', gridTemplateColumns: item.best_for && item.nearby ? '1fr 1fr' : '1fr', gap:16, marginBottom:28 }}>
               {item.best_for && (
-                <div style={{ background:'#f0f9ff', border:'1px solid #e0f2fe', borderRadius:20, padding:'16px' }}>
+                <div style={{ background:'rgba(34,211,238,0.10)', border:'1px solid rgba(34,211,238,0.22)', borderRadius:20, padding:'16px' }}>
                   <div style={{ fontSize:13, fontWeight:700, color:'#0284c7', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>👥 Phù hợp cho</div>
                   <div style={{ fontSize:14, color:'#0f172a', lineHeight:1.6 }}>{item.best_for}</div>
                 </div>
               )}
               {item.nearby && (
-                <div style={{ background:'#fdf4ff', border:'1px solid #fae8ff', borderRadius:20, padding:'16px' }}>
+                <div style={{ background:'rgba(129,140,248,0.10)', border:'1px solid rgba(129,140,248,0.22)', borderRadius:20, padding:'16px' }}>
                   <div style={{ fontSize:13, fontWeight:700, color:'#c026d3', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>🗺 Lân cận</div>
                   <div style={{ fontSize:14, color:'#0f172a', lineHeight:1.6 }}>{item.nearby}</div>
                 </div>
@@ -383,35 +401,35 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
             </div>
           )}
 
-          <div style={{ borderTop:'1px solid #f1f5f9', paddingTop:12 }}>
+          <div style={{ borderTop:'1px solid var(--border-soft)', paddingTop:12 }}>
             {[
               item.opening_hours     && { icon:'🕐', label:'Giờ mở cửa',        value:item.opening_hours,     color:'#0f172a' },
-              item.entrance_fee      && { icon:'🎫', label:'Vé vào cửa',         value:item.entrance_fee,      color:'#6366f1' },
+              item.entrance_fee      && { icon:'🎫', label:'Vé vào cửa',         value:item.entrance_fee,      color:'var(--accent-indigo)' },
               item.duration          && { icon:'⏱', label:'Thời gian dự kiến',value:item.duration,          color:'#0f172a' },
               item.transport_to_next && { icon:'🚗', label:'Di chuyển tiếp theo',value:item.transport_to_next, color:'#0369a1' },
             ].filter(Boolean).map((row, i) => (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 0', borderBottom:'1px solid #f8fafc' }}>
-                <div style={{ width:40, height:40, borderRadius:12, background:'#f8fafc', border:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 0', borderBottom:'1px solid var(--border-soft)' }}>
+                <div style={{ width:40, height:40, borderRadius:12, background:'var(--surface-muted)', border:'1px solid var(--border-soft)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
                   {row.icon}
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:12, color:'#64748b', fontWeight:500 }}>{row.label}</div>
+                  <div style={{ fontSize:12, color:'var(--text-muted)', fontWeight:500 }}>{row.label}</div>
                   <div style={{ fontSize:14, color:row.color, fontWeight:600, marginTop:2 }}>{row.value}</div>
                 </div>
               </div>
             ))}
 
             {item.address && (
-              <div className="copy-address-row" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 0', borderBottom:'1px solid #f8fafc', cursor:'pointer', transition:'opacity 0.2s' }}
+              <div className="copy-address-row" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 0', borderBottom:'1px solid var(--border-soft)', cursor:'pointer', transition:'opacity 0.2s' }}
                 onClick={() => navigator.clipboard?.writeText(item.address)}>
-                <div style={{ width:40, height:40, borderRadius:12, background:'#f8fafc', border:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
+                <div style={{ width:40, height:40, borderRadius:12, background:'var(--surface-muted)', border:'1px solid var(--border-soft)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
                   📋
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:12, color:'#64748b', fontWeight:500 }}>Sao chép địa chỉ</div>
-                  <div style={{ fontSize:14, color:'#6366f1', fontWeight:600, marginTop:2 }}>{item.address}</div>
+                  <div style={{ fontSize:14, color:'var(--brand-primary)', fontWeight:600, marginTop:2 }}>{item.address}</div>
                 </div>
-                <span style={{ fontSize:11, color:'#64748b', background:'#f1f5f9', padding:'4px 10px', borderRadius:8, flexShrink:0, fontWeight:600 }}>COPY</span>
+                <span style={{ fontSize:11, color:'var(--text-muted)', background:'var(--surface-muted)', padding:'4px 10px', borderRadius:8, flexShrink:0, fontWeight:600 }}>COPY</span>
               </div>
             )}
           </div>
@@ -464,12 +482,17 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
   )
 }
 
-function DayView({ day, dayIndex, accommodation }) {
+function DayView({ day, dayIndex, accommodation, totalBudget = 0 }) {
   const [activePlace, setActivePlace] = useState(null)
   const [modalItem, setModalItem] = useState(null)
   const [modalRect, setModalRect] = useState(null)
   const dayDetailRef = useRef(null)
   const activeColor = DAY_COLORS[dayIndex % DAY_COLORS.length]
+  const dayEstimatedCost = useMemo(
+    () => (day.schedule || []).reduce((sum, item) => sum + parseBudgetNumber(item.estimated_cost), 0),
+    [day.schedule]
+  )
+  const budgetProgress = totalBudget > 0 ? Math.min(100, Math.round((dayEstimatedCost / totalBudget) * 100)) : 0
 
   const mapPlaces = useMemo(
     () => (day.schedule || [])
@@ -503,16 +526,37 @@ function DayView({ day, dayIndex, accommodation }) {
 
         <div className="day-schedule-col">
           {/* Day header */}
-          <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:20, flexWrap:'wrap', paddingLeft: 8 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:14, flexWrap:'wrap', paddingLeft: 8 }}>
             <div style={{ width:36, height:36, background:`linear-gradient(135deg, ${activeColor}, ${activeColor}dd)`, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:800, color:'white', flexShrink:0, boxShadow:`0 6px 16px ${activeColor}40` }}>
               {String(day.day || '').replace(/[^\d]/g, '') || dayIndex + 1}
             </div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:13, fontWeight:700, color:activeColor, textTransform:'uppercase', letterSpacing:'1px', marginBottom:2 }}>NGÀY {String(day.day || '').replace(/[^\d]/g, '') || dayIndex + 1}</div>
-              <div style={{ fontSize:18, fontWeight:600, color:'#0f172a', fontFamily:"'Fraunces', serif", lineHeight:1.2, letterSpacing:'-0.3px' }}>{day.title}</div>
-              {day.weather && <div style={{ fontSize:13, color:'#64748b', marginTop:4, fontWeight: 500 }}>🌤️ {day.weather}</div>}
+              <div style={{ fontSize:18, fontWeight:600, color:'var(--text-strong)', fontFamily:"'Fraunces', serif", lineHeight:1.2, letterSpacing:'-0.3px' }}>{day.title}</div>
+              {day.weather && <div style={{ fontSize:13, color:'var(--text-muted)', marginTop:4, fontWeight: 500 }}>🌤️ {day.weather}</div>}
             </div>
           </div>
+
+          {dayEstimatedCost > 0 && totalBudget > 0 && (
+            <div style={{ margin: '0 0 18px 8px', background: '#f8fbff', border: '1px solid #e0edf7', borderRadius: 16, padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6f8ba1', marginBottom: 4 }}>
+                    Chi tiết hàng ngày
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                    {formatCompactCurrency(dayEstimatedCost)} <span style={{ color: '#6f8ba1', fontSize: 13, fontWeight: 600 }}>/ {formatCompactCurrency(totalBudget)}</span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 12, color: activeColor, fontWeight: 700, background: `${activeColor}12`, border: `1px solid ${activeColor}33`, borderRadius: 999, padding: '6px 10px' }}>
+                  {budgetProgress}% budget
+                </span>
+              </div>
+              <div style={{ height: 8, background: '#e7f0f8', borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${budgetProgress}%`, background: `linear-gradient(90deg, ${activeColor}, ${activeColor}bb)`, borderRadius: 999 }} />
+              </div>
+            </div>
+          )}
 
           {day.schedule?.map((item, idx) => {
             const placeIcon = getPlaceIcon(item)
@@ -531,7 +575,7 @@ function DayView({ day, dayIndex, accommodation }) {
             }
 
             return (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 180px', gap: 12, alignItems: 'center' }}>
+              <div key={idx} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 156px', gap: 12, alignItems: 'center' }}>
                 {/* Card chính */}
                 <div
                   className={`schedule-item-row ${isActive ? 'active' : ''}`}
@@ -551,14 +595,14 @@ function DayView({ day, dayIndex, accommodation }) {
                       {item.duration && <span style={{ fontSize:11, color: '#94a3b8', fontWeight: 500 }}>• {item.duration}</span>}
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom: 4, flexWrap:'wrap' }}>
-                      <span style={{ fontSize:13, fontWeight:700, color:'#0f172a', lineHeight:1.3, letterSpacing:'-0.1px' }}>{item.place}</span>
+                      <span style={{ fontSize:13, fontWeight:700, color:'var(--text-strong)', lineHeight:1.3, letterSpacing:'-0.1px' }}>{item.place}</span>
                       {placeIdx !== -1 && (
                         <span onClick={handleMapClick} className="map-badge">
                           #{placeIdx+1} Bản đồ
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize:12, color:'#64748b', lineHeight: 1.5 }}>{item.address}</div>
+                    <div style={{ fontSize:12, color:'var(--text-muted)', lineHeight: 1.5 }}>{item.address}</div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
@@ -582,7 +626,7 @@ function DayView({ day, dayIndex, accommodation }) {
   )
 }
 
-export default function ItineraryView({ itinerary, focusDay = null }) {
+export default function ItineraryView({ itinerary, focusDay = null, totalBudget = 0 }) {
   if (!itinerary) return null
   const { days, accommodation, packing_list, budget_breakdown } = itinerary
 
@@ -676,6 +720,32 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
           .schedule-item-icon { width: 38px; height: 38px; font-size: 18px; }
           .schedule-connector { top: 38px; bottom: -28px; }
           .bottom-grid { grid-template-columns: 1fr !important; }
+        }
+
+        html[data-theme='dark'] .premium-card,
+        html[data-theme='dark'] .hotel-card,
+        html[data-theme='dark'] .schedule-item-row,
+        html[data-theme='dark'] .goong-map-shell {
+          background: var(--surface-panel) !important;
+          border-color: var(--border-soft) !important;
+        }
+
+        html[data-theme='dark'] .pack-chip,
+        html[data-theme='dark'] .budget-item,
+        html[data-theme='dark'] .budget-icon,
+        html[data-theme='dark'] .schedule-item-icon,
+        html[data-theme='dark'] .map-badge {
+          background: var(--surface-muted) !important;
+          border-color: var(--border-soft) !important;
+          color: var(--text-soft) !important;
+        }
+
+        html[data-theme='dark'] .budget-value,
+        html[data-theme='dark'] .budget-label,
+        html[data-theme='dark'] .schedule-item-row span,
+        html[data-theme='dark'] .premium-card h3,
+        html[data-theme='dark'] .hotel-card div {
+          color: inherit;
         }
       `}</style>
 
@@ -786,7 +856,7 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
             </div>
 
             {/* STAT CARDS */}
-            <div className="bento-stat" style={{ '--icon-bg': '#eef2ff', '--icon-color': '#4f46e5', '--icon-shadow': 'rgba(79,70,229,0.2)', '--stat-glow': '#4f46e5' }}>
+            <div className="bento-stat" style={{ '--icon-bg': 'rgba(34,211,238,0.12)', '--icon-color': 'var(--brand-primary)', '--icon-shadow': 'rgba(34,211,238,0.2)', '--stat-glow': '#22d3ee' }}>
               <div className="bento-icon-box">⏳</div>
               <div>
                 <div style={{ fontSize: 13, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Thời gian</div>
@@ -827,6 +897,7 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
             day={day}
             dayIndex={focusDayIndex !== null ? focusDayIndex : i}
             accommodation={accommodation}
+            totalBudget={parseBudgetNumber(totalBudget)}
           />
         ))}
       </div>
@@ -836,7 +907,7 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
         <div className="bottom-grid" style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:24, marginTop:40, alignItems:'start', marginBottom: 60 }}>
           {budget_breakdown && (
             <div className="premium-card">
-              <h3 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>
+              <h3 style={{ fontSize:18, fontWeight:700, color:'var(--text-strong)', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>
                 💵 Dự toán ngân sách
               </h3>
               <div className="budget-list">
@@ -859,10 +930,10 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
           )}
           {packing_list?.length > 0 && (
             <div className="premium-card">
-              <h3 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>🎒 Hành trang cần thiết</h3>
+              <h3 style={{ fontSize:18, fontWeight:700, color:'var(--text-strong)', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>🎒 Hành trang cần thiết</h3>
               <div style={{ display:'flex', flexWrap:'wrap', gap:10 }}>
                 {packing_list.map((item,i) => (
-                  <span key={i} className="pack-chip"><span style={{ color:'#059669', fontWeight:800 }}>✓</span> {item}</span>
+                  <span key={i} className="pack-chip"><span style={{ color:'var(--brand-accent)', fontWeight:800 }}>✓</span> {item}</span>
                 ))}
               </div>
             </div>
@@ -873,7 +944,7 @@ export default function ItineraryView({ itinerary, focusDay = null }) {
       {/* GỢI Ý LƯU TRÚ */}
       {focusDay === null && accommodation?.length > 0 && (
         <div className="premium-card" style={{ marginBottom: 60 }}>
-          <h3 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>🏨 Gợi ý lưu trú</h3>
+          <h3 style={{ fontSize:18, fontWeight:700, color:'var(--text-strong)', margin:'0 0 20px 0', fontFamily:"'Fraunces', serif" }}>🏨 Gợi ý lưu trú</h3>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:20 }}>
             {accommodation.map((h,i) => (
               <div key={i} className="hotel-card">

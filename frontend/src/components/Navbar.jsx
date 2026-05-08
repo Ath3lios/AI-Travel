@@ -1,9 +1,11 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
+  const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [openMenu, setOpenMenu] = useState(false)
   const menuRef = useRef(null)
@@ -41,9 +43,9 @@ export default function Navbar() {
           top: 0;
           z-index: 40;
           backdrop-filter: blur(10px);
-          background: rgba(255, 255, 255, 0.92);
-          border-bottom: 1px solid #e2e8f0;
-          box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+          background: var(--nav-bg);
+          border-bottom: 1px solid var(--nav-border);
+          box-shadow: var(--nav-shadow);
         }
 
         .nav-inner {
@@ -65,7 +67,7 @@ export default function Navbar() {
           text-decoration: none;
           font-size: 20px;
           font-weight: 700;
-          color: #0f172a;
+          color: var(--text-strong);
           letter-spacing: -0.3px;
         }
 
@@ -94,17 +96,17 @@ export default function Navbar() {
         }
 
         .nav-link {
-          color: #334155;
+          color: var(--text-soft);
         }
 
         .nav-link:hover {
-          background: #f8fafc;
-          color: #0f172a;
+          background: var(--nav-link-hover);
+          color: var(--text-strong);
         }
 
         .nav-user {
           font-size: 13px;
-          color: #64748b;
+          color: var(--text-muted);
           padding: 0 4px;
           max-width: 150px;
           white-space: nowrap;
@@ -113,25 +115,44 @@ export default function Navbar() {
         }
 
         .nav-ghost {
-          color: #0f172a;
-          border-color: #dbe3ee;
-          background: #ffffff;
+          color: var(--text-strong);
+          border-color: var(--button-ghost-border);
+          background: var(--button-ghost-bg);
         }
 
         .nav-ghost:hover {
-          background: #f8fafc;
-          border-color: #cbd5e1;
+          background: var(--nav-link-hover);
+          border-color: var(--border-strong);
         }
 
         .nav-solid {
-          color: #ffffff;
-          background: #0f172a;
-          border-color: #0f172a;
+          color: ${isDark ? '#09111d' : '#ffffff'};
+          background: var(--button-solid-bg);
+          border-color: var(--button-solid-bg);
         }
 
         .nav-solid:hover {
-          background: #1e293b;
-          border-color: #1e293b;
+          background: var(--button-solid-hover);
+          border-color: var(--button-solid-hover);
+        }
+
+        .theme-toggle-btn {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          border: 1px solid var(--button-ghost-border);
+          background: var(--button-ghost-bg);
+          color: var(--text-strong);
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+        }
+
+        .theme-toggle-btn:hover {
+          background: var(--nav-link-hover);
+          border-color: var(--border-strong);
         }
 
         .nav-user-menu {
@@ -144,7 +165,7 @@ export default function Navbar() {
           height: 36px;
           border-radius: 999px;
           border: 1px solid #dbe3ee;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          background: linear-gradient(135deg, var(--brand-primary), var(--accent-indigo));
           color: #ffffff;
           font-size: 14px;
           font-weight: 700;
@@ -165,21 +186,21 @@ export default function Navbar() {
           top: calc(100% + 10px);
           right: 0;
           min-width: 190px;
-          background: #ffffff;
-          border: 1px solid #e2e8f0;
+          background: var(--surface-panel);
+          border: 1px solid var(--border-soft);
           border-radius: 12px;
-          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
+          box-shadow: var(--shadow-soft);
           padding: 10px;
           z-index: 50;
         }
 
         .nav-menu-name {
           font-size: 13px;
-          color: #0f172a;
+          color: var(--text-strong);
           font-weight: 600;
           margin: 0 0 8px;
           padding-bottom: 8px;
-          border-bottom: 1px solid #f1f5f9;
+          border-bottom: 1px solid var(--border-soft);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -188,9 +209,9 @@ export default function Navbar() {
         .nav-menu-link {
           display: block;
           text-decoration: none;
-          color: #334155;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
+          color: var(--text-soft);
+          background: var(--surface-muted);
+          border: 1px solid var(--border-soft);
           border-radius: 10px;
           padding: 9px 12px;
           font-size: 13px;
@@ -199,8 +220,8 @@ export default function Navbar() {
         }
 
         .nav-menu-link:hover {
-          background: #f1f5f9;
-          color: #0f172a;
+          background: var(--nav-link-hover);
+          color: var(--text-strong);
         }
 
         .nav-menu-logout {
@@ -251,6 +272,12 @@ export default function Navbar() {
             border-radius: 9px;
           }
 
+          .theme-toggle-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+          }
+
           .nav-avatar-btn {
             width: 34px;
             height: 34px;
@@ -267,6 +294,15 @@ export default function Navbar() {
           </Link>
 
           <div className="nav-links">
+            <button
+              type="button"
+              className="theme-toggle-btn"
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+              title={isDark ? 'Light mode' : 'Dark mode'}
+            >
+              {isDark ? '☀️' : '🌙'}
+            </button>
             {user ? (
               <>
                 <span className="nav-user">Xin chào, {user.name}</span>

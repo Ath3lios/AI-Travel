@@ -21,6 +21,8 @@ const BUDGET_PRESETS = [
   { label: 'Trung bình', value: '3000000', desc: '~3 triệu' },
   { label: 'Thoải mái', value: '6000000', desc: '~6 triệu' },
 ]
+const MIN_BUDGET = 500000
+const MAX_BUDGET = 15000000
 
 const CREATE_TRIP_TIMEOUT_MS = 120000
 const RECOVERY_POLL_RETRIES = 5
@@ -36,6 +38,12 @@ function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
   return d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function formatBudgetLabel(value) {
+  const amount = Number(value || 0)
+  if (!amount) return '0 đ'
+  return `${amount.toLocaleString('vi-VN')} đ`
 }
 
 function today() {
@@ -275,13 +283,13 @@ export default function TripForm({ onTripCreated, editTrip }) {
           }
         `}</style>
 
-        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', padding: '48px 28px', textAlign: 'center', minHeight: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
+        <div style={{ background: 'var(--surface-panel)', borderRadius: 20, border: '1px solid var(--border-soft)', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', padding: '48px 28px', textAlign: 'center', minHeight: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
           <div style={{ animation: 'fadeInUp 0.5s ease' }}>
             <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 300, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: -0.3 }}>
               {isEdit ? 'AI đang sửa lại lịch trình' : 'AI đang lên kế hoạch cho bạn'}
             </h3>
-            <p style={{ fontSize: 14, color: '#94a3b8', margin: 0 }}>
-              Đang phân tích <strong style={{ color: '#6366f1' }}>{form.destination}</strong> · {days} ngày · {form.people} người
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
+              Đang phân tích <strong style={{ color: 'var(--brand-primary)' }}>{form.destination}</strong> · {days} ngày · {form.people} người
             </p>
           </div>
 
@@ -292,12 +300,12 @@ export default function TripForm({ onTripCreated, editTrip }) {
               { icon: '💰', text: 'Tính toán ngân sách', delay: '1.6s' },
               { icon: '🏠', text: 'Gợi ý chỗ ở & ăn uống', delay: '2.4s' },
             ].map((step, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderRadius: 10, background: '#f8fafc', border: '1px solid #f1f5f9', animation: `pulse 2s ease-in-out infinite ${step.delay}` }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderRadius: 10, background: 'var(--surface-muted)', border: '1px solid var(--border-soft)', animation: `pulse 2s ease-in-out infinite ${step.delay}` }}>
                 <span style={{ fontSize: 18 }}>{step.icon}</span>
                 <span style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>{step.text}</span>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>
                   {[0,1,2].map(d => (
-                    <div key={d} style={{ width: 5, height: 5, borderRadius: '50%', background: '#6366f1', animation: `dotBounce 1.2s ease-in-out infinite`, animationDelay: `${d * 0.2}s` }} />
+                    <div key={d} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--brand-primary)', animation: `dotBounce 1.2s ease-in-out infinite`, animationDelay: `${d * 0.2}s` }} />
                   ))}
                 </div>
               </div>
@@ -306,9 +314,9 @@ export default function TripForm({ onTripCreated, editTrip }) {
 
           <div style={{ width: '100%', maxWidth: 300 }}>
             <div style={{ height: 6, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ height: '100%', background: 'linear-gradient(90deg, #6366f1, #a855f7)', borderRadius: 999, animation: 'progressBar 25s ease forwards' }} />
+              <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--brand-primary), var(--accent-indigo))', borderRadius: 999, animation: 'progressBar 25s ease forwards' }} />
             </div>
-            <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 8, textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
               Vui lòng chờ trong vài giây ⏱
             </p>
           </div>
@@ -321,38 +329,50 @@ export default function TripForm({ onTripCreated, editTrip }) {
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:ital,wght@0,300;1,300&display=swap');
-        .form-input { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; font-size: 15px; color: #0f0f1a; outline: none; transition: all 0.2s; font-family: 'DM Sans', sans-serif; box-sizing: border-box; background: white; }
-        .form-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.08); }
-        .form-label { font-size: 13px; font-weight: 500; color: #475569; margin-bottom: 8px; display: block; }
-        .style-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: white; cursor: pointer; font-size: 13px; font-weight: 500; color: #475569; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
-        .style-btn:hover { border-color: #c7d2fe; background: #f0f4ff; }
-        .style-btn.active { border-color: #6366f1; background: #eef2ff; color: #4f46e5; }
-        .budget-btn { flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: white; cursor: pointer; text-align: center; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
-        .budget-btn:hover { border-color: #c7d2fe; }
-        .budget-btn.active { border-color: #6366f1; background: #eef2ff; }
-        .counter-btn { width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; color: #475569; }
-        .counter-btn:hover { border-color: #6366f1; color: #6366f1; }
+        .form-input { width: 100%; border: 1.5px solid var(--border-soft); border-radius: 12px; padding: 12px 16px; font-size: 15px; color: var(--text-strong); outline: none; transition: all 0.2s; font-family: 'DM Sans', sans-serif; box-sizing: border-box; background: var(--surface-panel); }
+        .form-input:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(34,211,238,0.14); }
+        .form-label { font-size: 13px; font-weight: 500; color: var(--text-soft); margin-bottom: 8px; display: block; }
+        .style-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1.5px solid var(--border-soft); background: var(--surface-panel); cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-soft); transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+        .style-btn:hover { border-color: #bfdcf5; background: #f5fbff; transform: translateY(-1px); }
+        .style-btn.active { border-color: var(--brand-primary); background: rgba(34,211,238,0.12); color: var(--brand-primary); box-shadow: 0 8px 18px rgba(34,211,238,0.12); }
+        .budget-btn { flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-soft); background: var(--surface-panel); cursor: pointer; text-align: center; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+        .budget-btn:hover { border-color: #bfdcf5; transform: translateY(-1px); }
+        .budget-btn.active { border-color: var(--brand-primary); background: rgba(34,211,238,0.12); }
+        .counter-btn { width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid var(--border-soft); background: var(--surface-panel); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; color: var(--text-soft); }
+        .counter-btn:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
         .trip-date-field { display: flex; flex-direction: column; }
         .trip-date-caption { font-size: 12px; color: #94a3b8; margin-bottom: 6px; line-height: 1.25; min-height: 15px; }
         .trip-date-input { height: 44px; min-height: 44px; font-size: 15px; line-height: 1.2; appearance: none; -webkit-appearance: none; }
         .trip-date-input::-webkit-datetime-edit { padding: 0; line-height: 1.2; }
         .trip-date-input::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
         .trip-date-input::-webkit-calendar-picker-indicator { opacity: 0.9; }
+        .trip-form-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 22px; }
+        .trip-panel { background: linear-gradient(180deg, var(--surface-panel), var(--surface-panel-alt)); border: 1px solid var(--border-soft); border-radius: 18px; padding: 20px; }
+        .trip-panel-title { margin: 0 0 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+        .budget-slider { width: 100%; accent-color: var(--brand-primary); margin: 12px 0 10px; }
+        .budget-scale { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-muted); }
+        .budget-value { font-size: 24px; font-weight: 700; color: var(--text-strong); font-family: 'Fraunces', serif; letter-spacing: -0.02em; }
+        .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+        .summary-card { border-radius: 14px; background: var(--surface-panel-alt); border: 1px solid var(--border-soft); padding: 12px 14px; }
+        .summary-card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px; }
+        .summary-card-value { font-size: 14px; font-weight: 700; color: var(--text-strong); line-height: 1.45; }
         @media (max-width: 768px) {
+          .trip-form-grid { grid-template-columns: 1fr !important; }
           .trip-location-grid { grid-template-columns: 1fr !important; }
           .trip-date-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
           .trip-date-field { width: 100%; }
           .trip-date-input { font-size: 16px; }
           .budget-presets { flex-direction: column !important; }
+          .summary-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
-      <div style={{ background: 'white', borderRadius: 20, border: isEdit ? '1.5px solid #c7d2fe' : '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
-        <div style={{ padding: '24px 28px', borderBottom: '1px solid #f8fafc', background: isEdit ? 'linear-gradient(135deg, #eef2ff, #fafafa)' : 'linear-gradient(135deg, #f0f4ff, #fafafa)' }}>
-          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 300, color: '#0f0f1a', margin: 0, letterSpacing: -0.3 }}>
+      <div style={{ background: 'var(--surface-panel)', borderRadius: 20, border: isEdit ? '1.5px solid #c7d2fe' : '1px solid var(--border-soft)', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+        <div style={{ padding: '24px 28px', borderBottom: '1px solid var(--border-soft)', background: 'linear-gradient(135deg, var(--surface-strong), var(--surface-panel))' }}>
+          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 300, color: 'var(--text-strong)', margin: 0, letterSpacing: -0.3 }}>
             {isEdit ? '🔄 Sửa lịch trình' : '✈️ Tạo lịch trình mới'}
           </h2>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
             {isEdit
               ? 'Chỉnh lại thông tin bên dưới — AI sẽ tạo lịch trình mới đè lên lịch cũ'
               : 'Điền thông tin bên dưới để AI tạo lịch trình cho bạn'}
@@ -366,126 +386,164 @@ export default function TripForm({ onTripCreated, editTrip }) {
             </div>
           )}
 
-          {/* Xuất phát + Điểm đến */}
-          <div className="trip-location-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-            <div>
-              <label className="form-label">🏠 Xuất phát từ</label>
-              <input value={form.departure_city}
-                onChange={e => setForm({ ...form, departure_city: e.target.value })}
-                placeholder="Nhập tỉnh/thành phố..."
-                list="departure-city-suggestions"
-                className="form-input" required />
-              <datalist id="departure-city-suggestions">
-                {departureSuggestions.map((s) => (
-                  <option key={`${s.place_id || s.description}-${s.main_text || ''}`} value={s.description || s.main_text || ''} />
-                ))}
-              </datalist>
-            </div>
-            <div>
-              <label className="form-label">📍 Điểm đến</label>
-              <input value={form.destination}
-                onChange={e => setForm({ ...form, destination: e.target.value })}
-                placeholder="Đà Nẵng, Hội An, Phú Quốc..."
-                list="destination-suggestions"
-                className="form-input" required />
-              <datalist id="destination-suggestions">
-                {destinationSuggestions.map((s) => (
-                  <option key={`${s.place_id || s.description}-${s.main_text || ''}`} value={s.description || s.main_text || ''} />
-                ))}
-              </datalist>
-            </div>
-          </div>
-
-          {/* Ngày đi - Ngày về */}
-          <div style={{ marginBottom: 24 }}>
-            <label className="form-label">📅 Thời gian chuyến đi</label>
-            <div className="trip-date-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div className="trip-date-field">
-                <div className="trip-date-caption">Ngày đi</div>
-                <input type="date" value={form.start_date} min={today()}
-                  onChange={e => handleStartDate(e.target.value)}
-                  className="form-input trip-date-input" />
+          <div className="trip-form-grid">
+            <div className="trip-panel">
+              <h3 className="trip-panel-title">Thông tin chuyến đi</h3>
+              <div className="trip-location-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                <div>
+                  <label className="form-label">🏠 Xuất phát từ</label>
+                  <input value={form.departure_city}
+                    onChange={e => setForm({ ...form, departure_city: e.target.value })}
+                    placeholder="Nhập tỉnh/thành phố..."
+                    list="departure-city-suggestions"
+                    className="form-input" required />
+                  <datalist id="departure-city-suggestions">
+                    {departureSuggestions.map((s) => (
+                      <option key={`${s.place_id || s.description}-${s.main_text || ''}`} value={s.description || s.main_text || ''} />
+                    ))}
+                  </datalist>
+                </div>
+                <div>
+                  <label className="form-label">📍 Điểm đến</label>
+                  <input value={form.destination}
+                    onChange={e => setForm({ ...form, destination: e.target.value })}
+                    placeholder="Đà Nẵng, Hội An, Phú Quốc..."
+                    list="destination-suggestions"
+                    className="form-input" required />
+                  <datalist id="destination-suggestions">
+                    {destinationSuggestions.map((s) => (
+                      <option key={`${s.place_id || s.description}-${s.main_text || ''}`} value={s.description || s.main_text || ''} />
+                    ))}
+                  </datalist>
+                </div>
               </div>
-              <div className="trip-date-field">
-                <div className="trip-date-caption">Ngày về</div>
-                <input type="date" value={form.end_date} min={form.start_date}
-                  onChange={e => setForm({ ...form, end_date: e.target.value })}
-                  className="form-input trip-date-input" />
+
+              <div style={{ marginBottom: 24 }}>
+                <label className="form-label">📅 Thời gian chuyến đi</label>
+                <div className="trip-date-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div className="trip-date-field">
+                    <div className="trip-date-caption">Ngày đi</div>
+                    <input type="date" value={form.start_date} min={today()}
+                      onChange={e => handleStartDate(e.target.value)}
+                      className="form-input trip-date-input" />
+                  </div>
+                  <div className="trip-date-field">
+                    <div className="trip-date-caption">Ngày về</div>
+                    <input type="date" value={form.end_date} min={form.start_date}
+                      onChange={e => setForm({ ...form, end_date: e.target.value })}
+                      className="form-input trip-date-input" />
+                  </div>
+                </div>
+                {days > 0 && (
+                  <div style={{ background: '#edf6ff', border: '1.5px solid #c8e0f4', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                    <span style={{ fontSize: 13, color: '#1d4ed8' }}>
+                      📆 {formatDate(form.start_date)} → {formatDate(form.end_date)}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1d4ed8', background: 'white', padding: '4px 12px', borderRadius: 999 }}>
+                      {days} ngày
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label className="form-label">👥 Số người</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button type="button" className="counter-btn"
+                      onClick={() => setForm(f => ({ ...f, people: Math.max(1, f.people - 1) }))}>−</button>
+                    <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-strong)', minWidth: 32, textAlign: 'center' }}>{form.people}</span>
+                    <button type="button" className="counter-btn"
+                      onClick={() => setForm(f => ({ ...f, people: Math.min(20, f.people + 1) }))}>+</button>
+                    <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>người</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label">💰 Ngân sách / người</label>
+                  <div className="budget-value">{formatBudgetLabel(form.budget)}</div>
+                  <input
+                    type="range"
+                    min={MIN_BUDGET}
+                    max={MAX_BUDGET}
+                    step={250000}
+                    value={Number(form.budget || MIN_BUDGET)}
+                    onChange={e => setForm({ ...form, budget: e.target.value })}
+                    className="budget-slider"
+                  />
+                  <div className="budget-scale">
+                    <span>0.5 triệu</span>
+                    <span>15 triệu</span>
+                  </div>
+                </div>
               </div>
             </div>
-            {days > 0 && (
-              <div style={{ background: '#eef2ff', border: '1.5px solid #c7d2fe', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-                <span style={{ fontSize: 13, color: '#4f46e5' }}>
-                  📆 {formatDate(form.start_date)} → {formatDate(form.end_date)}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#4f46e5', background: 'white', padding: '4px 12px', borderRadius: 999 }}>
-                  {days} ngày
-                </span>
+
+            <div className="trip-panel">
+              <h3 className="trip-panel-title">Tùy chọn và tóm tắt</h3>
+
+              <div style={{ marginBottom: 20 }}>
+                <label className="form-label">Mức gợi ý nhanh</label>
+                <div className="budget-presets" style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                  {BUDGET_PRESETS.map(b => (
+                    <button key={b.value} type="button"
+                      className={`budget-btn ${form.budget === b.value ? 'active' : ''}`}
+                      onClick={() => setForm({ ...form, budget: b.value })}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: form.budget === b.value ? '#1d4ed8' : '#0f0f1a' }}>{b.label}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{b.desc}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Số người */}
-          <div style={{ marginBottom: 24 }}>
-            <label className="form-label">👥 Số người</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button type="button" className="counter-btn"
-                onClick={() => setForm(f => ({ ...f, people: Math.max(1, f.people - 1) }))}>−</button>
-              <span style={{ fontSize: 20, fontWeight: 600, color: '#0f0f1a', minWidth: 32, textAlign: 'center' }}>{form.people}</span>
-              <button type="button" className="counter-btn"
-                onClick={() => setForm(f => ({ ...f, people: Math.min(20, f.people + 1) }))}>+</button>
-              <span style={{ fontSize: 13, color: '#94a3b8' }}>người</span>
+              <div style={{ marginBottom: 24 }}>
+                <label className="form-label">🎯 Sở thích</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  {STYLES.map(s => (
+                    <button key={s.label} type="button"
+                      className={`style-btn ${form.travel_style.includes(s.label) ? 'active' : ''}`}
+                      onClick={() => toggleStyle(s.label)}>
+                      <span>{s.icon}</span> {s.label}
+                      {form.travel_style.includes(s.label) && <span style={{ color: 'var(--brand-primary)' }}>✓</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="summary-grid">
+                <div className="summary-card">
+                  <div className="summary-card-label">Điểm đến</div>
+                  <div className="summary-card-value">{form.destination || 'Chưa chọn'}</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-card-label">Xuất phát</div>
+                  <div className="summary-card-value">{form.departure_city || 'Chưa nhập'}</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-card-label">Thời lượng</div>
+                  <div className="summary-card-value">{days > 0 ? `${days} ngày` : 'Chưa hợp lệ'}</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-card-label">Nhóm đi</div>
+                  <div className="summary-card-value">{form.people} người</div>
+                </div>
+              </div>
+
+              {form.destination && form.departure_city && form.travel_style.length > 0 && days > 0 && (
+                <div style={{ background: 'var(--surface-muted)', borderRadius: 12, padding: '14px 16px', marginBottom: 20, border: '1px solid var(--border-soft)', fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>
+                  📋 AI sẽ tạo lịch trình <strong style={{ color: 'var(--text-strong)' }}>{days} ngày</strong> từ{' '}
+                  <strong style={{ color: 'var(--text-strong)' }}>{form.departure_city}</strong> đến{' '}
+                  <strong style={{ color: 'var(--text-strong)' }}>{form.destination}</strong> cho{' '}
+                  <strong style={{ color: 'var(--text-strong)' }}>{form.people} người</strong>, phong cách{' '}
+                  <strong style={{ color: '#1d4ed8' }}>{form.travel_style.join(', ')}</strong>
+                  {isEdit && <span style={{ color: '#f59e0b' }}> — sẽ đè lên lịch trình cũ</span>}
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Ngân sách */}
-          <div style={{ marginBottom: 24 }}>
-            <label className="form-label">💰 Ngân sách / người</label>
-            <div className="budget-presets" style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-              {BUDGET_PRESETS.map(b => (
-                <button key={b.value} type="button"
-                  className={`budget-btn ${form.budget === b.value ? 'active' : ''}`}
-                  onClick={() => setForm({ ...form, budget: b.value })}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: form.budget === b.value ? '#4f46e5' : '#0f0f1a' }}>{b.label}</div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{b.desc}</div>
-                </button>
-              ))}
-            </div>
-            <input type="number" value={form.budget}
-              onChange={e => setForm({ ...form, budget: e.target.value })}
-              placeholder="Hoặc nhập số tiền..."
-              className="form-input" style={{ fontSize: 14 }} />
-          </div>
-
-          {/* Phong cách */}
-          <div style={{ marginBottom: 28 }}>
-            <label className="form-label">🎯 Sở thích</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {STYLES.map(s => (
-                <button key={s.label} type="button"
-                  className={`style-btn ${form.travel_style.includes(s.label) ? 'active' : ''}`}
-                  onClick={() => toggleStyle(s.label)}>
-                  <span>{s.icon}</span> {s.label}
-                  {form.travel_style.includes(s.label) && <span style={{ color: '#6366f1' }}>✓</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Summary */}
-          {form.destination && form.departure_city && form.travel_style.length > 0 && days > 0 && (
-            <div style={{ background: '#f8fafc', borderRadius: 12, padding: '14px 16px', marginBottom: 20, border: '1px solid #f1f5f9', fontSize: 13, color: '#64748b' }}>
-              📋 AI sẽ tạo lịch trình <strong style={{ color: '#0f0f1a' }}>{days} ngày</strong> từ{' '}
-              <strong style={{ color: '#0f0f1a' }}>{form.departure_city}</strong> đến{' '}
-              <strong style={{ color: '#0f0f1a' }}>{form.destination}</strong> cho{' '}
-              <strong style={{ color: '#0f0f1a' }}>{form.people} người</strong>, phong cách{' '}
-              <strong style={{ color: '#6366f1' }}>{form.travel_style.join(', ')}</strong>
-              {isEdit && <span style={{ color: '#f59e0b' }}> — sẽ đè lên lịch trình cũ</span>}
-            </div>
-          )}
 
           <button type="submit" disabled={loading}
-            style={{ width: '100%', background: loading ? '#94a3b8' : isEdit ? '#6366f1' : '#0f0f1a', color: 'white', padding: '14px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s', fontFamily: "'DM Sans', sans-serif" }}>
+            style={{ width: '100%', background: loading ? '#94a3b8' : isEdit ? 'var(--accent-indigo)' : 'var(--brand-primary)', color: '#0b1120', padding: '14px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s', fontFamily: "'DM Sans', sans-serif" }}>
             {isEdit ? '🔄 Sửa lịch trình' : '✨ Tạo lịch trình với AI'}
           </button>
         </form>

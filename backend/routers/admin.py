@@ -28,6 +28,48 @@ from services.health_metrics import snapshot as health_snapshot
 router = APIRouter(prefix='/admin', tags=['admin'])
 
 
+def _delete_trip_catalog_rows(db: Session, trip_ids: list[int]) -> None:
+    if not trip_ids:
+        return
+    db.query(Activity).filter(Activity.trip_id.in_(trip_ids)).delete(synchronize_session=False)
+    db.query(Hotel).filter(Hotel.trip_id.in_(trip_ids)).delete(synchronize_session=False)
+    db.query(Destination).filter(Destination.trip_id.in_(trip_ids)).delete(synchronize_session=False)
+
+
+def _delete_legacy_catalog_rows_for_trip(db: Session, trip: Trip) -> None:
+    destination_name = (trip.destination or "").strip()
+    if not destination_name:
+        return
+    same_destination_trip_count = (
+        db.query(func.count(Trip.id))
+        .filter(Trip.destination.ilike(destination_name))
+        .scalar()
+        or 0
+    )
+    if same_destination_trip_count != 1:
+        return
+    legacy_destination_ids = [
+        destination_id
+        for (destination_id,) in db.query(Destination.id)
+        .filter(
+            Destination.trip_id.is_(None),
+            (Destination.city.ilike(destination_name) | Destination.name.ilike(destination_name)),
+        )
+        .all()
+    ]
+    if not legacy_destination_ids:
+        return
+    db.query(Activity).filter(
+        Activity.trip_id.is_(None),
+        Activity.destination_id.in_(legacy_destination_ids),
+    ).delete(synchronize_session=False)
+    db.query(Hotel).filter(
+        Hotel.trip_id.is_(None),
+        Hotel.destination_id.in_(legacy_destination_ids),
+    ).delete(synchronize_session=False)
+    db.query(Destination).filter(Destination.id.in_(legacy_destination_ids)).delete(synchronize_session=False)
+
+
 class UpdateUserPayload(BaseModel):
     role: str | None = None
     is_active: bool | None = None
@@ -434,6 +476,11 @@ def delete_user(
         if admin_count <= 1:
             raise HTTPException(status_code=400, detail="Khong the xoa admin cuoi cung")
 
+    owned_trips = db.query(Trip).filter(Trip.user_id == row.id).all()
+    trip_ids = [trip.id for trip in owned_trips]
+    for trip in owned_trips:
+        _delete_legacy_catalog_rows_for_trip(db, trip)
+    _delete_trip_catalog_rows(db, trip_ids)
     deleted_trip_count = db.query(Trip).filter(Trip.user_id == row.id).delete(synchronize_session=False)
     deleted_user_id = str(row.id)
     db.delete(row)
@@ -537,6 +584,8 @@ def delete_trip(
     row = db.query(Trip).filter(Trip.id == trip_id).first()
     if not row:
         raise HTTPException(status_code=404, detail="Trip not found")
+    _delete_trip_catalog_rows(db, [row.id])
+    _delete_legacy_catalog_rows_for_trip(db, row)
     db.delete(row)
     db.commit()
     log_admin_action(
@@ -557,6 +606,10 @@ def bulk_delete_trips(
 ):
     if not payload.trip_ids:
         raise HTTPException(status_code=400, detail="trip_ids is required")
+    rows = db.query(Trip).filter(Trip.id.in_(payload.trip_ids)).all()
+    for row in rows:
+        _delete_legacy_catalog_rows_for_trip(db, row)
+    _delete_trip_catalog_rows(db, payload.trip_ids)
     deleted = db.query(Trip).filter(Trip.id.in_(payload.trip_ids)).delete(synchronize_session=False)
     db.commit()
     log_admin_action(

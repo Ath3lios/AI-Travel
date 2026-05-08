@@ -1,6 +1,5 @@
 ﻿import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import AnimatedBackground from './AnimatedBackground'
 
 const sliderImageModules = import.meta.glob('../../assets/hero-slider/*.{jpg,jpeg,png,webp,avif}', {
   eager: true,
@@ -16,7 +15,6 @@ export default function HeroSection({ user }) {
   const frameRef = useRef(null)
   const rafRef = useRef(0)
   const pointerRef = useRef({ x: 0, y: 0 })
-
   useEffect(() => {
     if (desktopCarouselImages.length <= 1) {
       setActiveDesktopSlide(0)
@@ -81,21 +79,20 @@ export default function HeroSection({ user }) {
   return (
     <section className="hero-bg hero-onboarding">
       <div className="hero-bg-pattern" />
-      <AnimatedBackground />
       <div className="hero-shell">
         <div className="hero-grid hero-onboarding-grid">
           <div className="hero-copy">
-            <div className="badge"><span>☁️</span> Trải nghiệm du lịch kỷ nguyên AI</div>
+            <div className="badge"><span>✦</span> AI Travel</div>
             <h1 className="hero-title">
-              {'Lên lịch trình du lịch với '}<em>AI Travel</em>
+              {'Biến ý tưởng nghỉ dưỡng thành '}<em>lịch trình sẵn sàng khởi hành</em>
             </h1>
             <p className="hero-lead">
-              Nhập điểm đến và ngân sách, nhận lịch trình gọn đẹp chỉ trong vài giây.
-              Mọi thứ được tối ưu để bạn chỉ cần xách balo lên và đi.
+              Từ điểm đến, ngân sách đến sở thích cá nhân, AI Travel dựng ngay một kế hoạch rõ ràng
+              theo ngày, đủ chi phí, đủ nhịp đi chơi và đủ thông tin để bạn ra quyết định nhanh.
             </p>
 
             <div className="hero-chips">
-              {['Điểm đến theo sở thích', 'Không cần thẻ tín dụng', 'Xem trước lộ trình ngay'].map((item, idx) => (
+              {['Cá nhân hóa theo sở thích', 'Không cần thẻ tín dụng', 'Xem lịch trình ngay trên web'].map((item, idx) => (
                 <span key={idx} className="hero-chip">
                   {item}
                 </span>
@@ -104,22 +101,25 @@ export default function HeroSection({ user }) {
 
             <div className="btn-group hero-actions">
               <Link to={user ? '/dashboard' : '/register'} className="btn-primary">
-                Bắt đầu ngay →
+                Tạo lịch trình ngay
               </Link>
-              <a href="#how-it-works" className="hero-link hero-cta-link">
+              <a href="#how-it-works" className="btn-secondary hero-outline-link">
                 Xem cách hoạt động
               </a>
             </div>
 
-            <div className="hero-stats">
+            <div className="hero-stats-strip">
               {[
-                { value: 'Vài giây', label: 'Có lịch trình đầu tiên' },
-                { value: '100%', label: 'Miễn phí khi bắt đầu' },
-                { value: 'AI', label: 'Gợi ý theo nhu cầu' },
+                { icon: '⏱', value: '30s', label: 'Có đề xuất đầu tiên' },
+                { icon: '💳', value: '0đ', label: 'Bắt đầu không mất phí' },
+                { icon: '🧭', value: 'AI', label: 'Cân bằng điểm đến, chi phí và nhịp đi' },
               ].map((s, i) => (
                 <div key={i} className="hero-stat">
-                  <div className="hero-stat-value">{s.value}</div>
-                  <div className="hero-stat-label">{s.label}</div>
+                  <div className="hero-stat-icon">{s.icon}</div>
+                  <div className="hero-stat-body">
+                    <div className="hero-stat-value">{s.value}</div>
+                    <div className="hero-stat-label">{s.label}</div>
+                  </div>
                 </div>
               ))}
             </div>
