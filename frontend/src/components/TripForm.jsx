@@ -285,7 +285,7 @@ export default function TripForm({ onTripCreated, editTrip }) {
 
         <div style={{ background: 'var(--surface-panel)', borderRadius: 20, border: '1px solid var(--border-soft)', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', padding: '48px 28px', textAlign: 'center', minHeight: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
           <div style={{ animation: 'fadeInUp 0.5s ease' }}>
-            <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 300, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: -0.3 }}>
+            <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 300, color: 'var(--text-strong)', margin: '0 0 8px 0', letterSpacing: -0.3 }}>
               {isEdit ? 'AI đang sửa lại lịch trình' : 'AI đang lên kế hoạch cho bạn'}
             </h3>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
@@ -302,7 +302,8 @@ export default function TripForm({ onTripCreated, editTrip }) {
             ].map((step, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderRadius: 10, background: 'var(--surface-muted)', border: '1px solid var(--border-soft)', animation: `pulse 2s ease-in-out infinite ${step.delay}` }}>
                 <span style={{ fontSize: 18 }}>{step.icon}</span>
-                <span style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>{step.text}</span>
+                {/* Sửa màu chữ '#475569' thành biến hệ thống */}
+                <span style={{ fontSize: 13, color: 'var(--text-strong)', fontWeight: 500 }}>{step.text}</span>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>
                   {[0,1,2].map(d => (
                     <div key={d} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--brand-primary)', animation: `dotBounce 1.2s ease-in-out infinite`, animationDelay: `${d * 0.2}s` }} />
@@ -435,11 +436,21 @@ export default function TripForm({ onTripCreated, editTrip }) {
                   </div>
                 </div>
                 {days > 0 && (
-                  <div style={{ background: '#edf6ff', border: '1.5px solid #c8e0f4', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-                    <span style={{ fontSize: 13, color: '#1d4ed8' }}>
+                  <div style={{ 
+                    background: 'var(--surface-muted)', // Thay nền cứng bằng biến
+                    border: '1px solid var(--border-soft)', // Đổi màu viền
+                    borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 
+                  }}>
+                    <span style={{ fontSize: 13, color: 'var(--text-strong)' }}> {/* Sửa màu chữ */}
                       📆 {formatDate(form.start_date)} → {formatDate(form.end_date)}
                     </span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1d4ed8', background: 'white', padding: '4px 12px', borderRadius: 999 }}>
+                    <span style={{ 
+                      fontSize: 13, fontWeight: 700, 
+                      color: 'var(--brand-primary)', // Sửa màu chữ
+                      background: 'var(--surface-panel)', // Sửa màu nền
+                      border: '1px solid var(--border-soft)',
+                      padding: '4px 12px', borderRadius: 999 
+                    }}>
                       {days} ngày
                     </span>
                   </div>
@@ -485,15 +496,16 @@ export default function TripForm({ onTripCreated, editTrip }) {
               <div style={{ marginBottom: 20 }}>
                 <label className="form-label">Mức gợi ý nhanh</label>
                 <div className="budget-presets" style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-                  {BUDGET_PRESETS.map(b => (
-                    <button key={b.value} type="button"
-                      className={`budget-btn ${form.budget === b.value ? 'active' : ''}`}
-                      onClick={() => setForm({ ...form, budget: b.value })}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: form.budget === b.value ? '#1d4ed8' : '#0f0f1a' }}>{b.label}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{b.desc}</div>
-                    </button>
-                  ))}
-                </div>
+                {BUDGET_PRESETS.map(b => (
+                  <button key={b.value} type="button"
+                    className={`budget-btn ${form.budget === b.value ? 'active' : ''}`}
+                    onClick={() => setForm({ ...form, budget: b.value })}>
+                    {/* Đổi màu '#1d4ed8' và '#0f0f1a' thành biến CSS */}
+                    <div style={{ fontSize: 13, fontWeight: 600, color: form.budget === b.value ? 'var(--brand-primary)' : 'var(--text-strong)' }}>{b.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{b.desc}</div>
+                  </button>
+                ))}
+              </div>
               </div>
 
               <div style={{ marginBottom: 24 }}>
@@ -512,20 +524,20 @@ export default function TripForm({ onTripCreated, editTrip }) {
 
               <div className="summary-grid">
                 <div className="summary-card">
-                  <div className="summary-card-label">Điểm đến</div>
-                  <div className="summary-card-value">{form.destination || 'Chưa chọn'}</div>
-                </div>
-                <div className="summary-card">
                   <div className="summary-card-label">Xuất phát</div>
                   <div className="summary-card-value">{form.departure_city || 'Chưa nhập'}</div>
                 </div>
                 <div className="summary-card">
-                  <div className="summary-card-label">Thời lượng</div>
-                  <div className="summary-card-value">{days > 0 ? `${days} ngày` : 'Chưa hợp lệ'}</div>
+                  <div className="summary-card-label">Điểm đến</div>
+                  <div className="summary-card-value">{form.destination || 'Chưa chọn'}</div>
+                </div> 
+                <div className="summary-card">
+                  <div className="summary-card-label">Số ngày</div>
+                  <div className="summary-card-value">{days > 0 ? `${days}` : 'Chưa hợp lệ'}</div>
                 </div>
                 <div className="summary-card">
-                  <div className="summary-card-label">Nhóm đi</div>
-                  <div className="summary-card-value">{form.people} người</div>
+                  <div className="summary-card-label">Số người</div>
+                  <div className="summary-card-value">{form.people}</div>
                 </div>
               </div>
 
@@ -535,7 +547,7 @@ export default function TripForm({ onTripCreated, editTrip }) {
                   <strong style={{ color: 'var(--text-strong)' }}>{form.departure_city}</strong> đến{' '}
                   <strong style={{ color: 'var(--text-strong)' }}>{form.destination}</strong> cho{' '}
                   <strong style={{ color: 'var(--text-strong)' }}>{form.people} người</strong>, phong cách{' '}
-                  <strong style={{ color: '#1d4ed8' }}>{form.travel_style.join(', ')}</strong>
+                  <strong style={{ color: 'var(--brand-primary)' }}>{form.travel_style.join(', ')}</strong>
                   {isEdit && <span style={{ color: '#f59e0b' }}> — sẽ đè lên lịch trình cũ</span>}
                 </div>
               )}
@@ -543,7 +555,38 @@ export default function TripForm({ onTripCreated, editTrip }) {
           </div>
 
           <button type="submit" disabled={loading}
-            style={{ width: '100%', background: loading ? '#94a3b8' : isEdit ? 'var(--accent-indigo)' : 'var(--brand-primary)', color: '#0b1120', padding: '14px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s', fontFamily: "'DM Sans', sans-serif" }}>
+            style={{ 
+              marginTop: 24, 
+              width: '100%', 
+              background: loading ? '#94a3b8' : 'linear-gradient(135deg, var(--brand-primary), var(--accent-indigo))', 
+              color: '#fff', 
+              padding: '14px', 
+              borderRadius: 12, 
+              border: 'none', 
+              boxShadow: loading ? 'none' : '0 4px 16px rgba(34,211,238,0.28)',
+              fontSize: 15, 
+              fontWeight: 700, 
+              cursor: loading ? 'not-allowed' : 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: 8, 
+              transition: 'all 0.3s ease', 
+              fontFamily: "'DM Sans', sans-serif" 
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 6px 24px rgba(34,211,238,0.36)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(34,211,238,0.28)'
+              }
+            }}
+          >
             {isEdit ? '🔄 Sửa lịch trình' : '✨ Tạo lịch trình với AI'}
           </button>
         </form>

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 const PAGE_SIZE = 10
 const TABS = ['overview', 'users', 'trips', 'catalog', 'audit', 'tools']
@@ -237,6 +239,8 @@ function CatalogForm({ config, form, onChange, onSubmit, onCancel, editing, dest
 }
 
 export default function Admin() {
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const [tab, setTab] = useState('overview')
   const [toast, setToast] = useState('')
   const [overview, setOverview] = useState(null)
@@ -275,6 +279,11 @@ export default function Admin() {
     const fromItems = catalog.items.map((item) => item.category).filter(Boolean)
     return Array.from(new Set([...ACTIVITY_CATEGORIES, ...fromItems]))
   }, [catalog.items])
+
+  const handleLogout = useCallback(() => {
+    logout()
+    navigate('/login')
+  }, [logout, navigate])
 
   const pushToast = useCallback((message) => {
     setToast(message)
@@ -584,8 +593,10 @@ export default function Admin() {
         .admin-shell { min-height: 100vh; background: #f8fafc; color: #0f172a; font-family: 'DM Sans', sans-serif; padding: 24px 16px 40px; }
         .wrap { max-width: 1260px; margin: 0 auto; }
         .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .head-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
         .title { margin: 0; font: 600 32px 'Fraunces', serif; }
         .sub { margin: 6px 0 0; color: #64748b; font-size: 14px; }
+        .admin-meta { color: #475569; font-size: 13px; font-weight: 700; }
         .tabs { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
         .tab { border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 8px 12px; font-weight: 700; cursor: pointer; }
         .tab.on { background: #0f172a; border-color: #0f172a; color: #fff; }
@@ -610,6 +621,7 @@ export default function Admin() {
         .btn.dark { background: #0f172a; border-color: #0f172a; color: #fff; }
         .btn.warn { background: #fff1f2; border-color: #fda4af; color: #b91c1c; }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        a.btn { text-decoration: none; display: inline-flex; align-items: center; }
         .t { width: 100%; border-collapse: collapse; font-size: 13px; }
         .t th, .t td { border-bottom: 1px solid #f1f5f9; padding: 10px 8px; text-align: left; vertical-align: top; }
         .t th { font-size: 11px; text-transform: uppercase; color: #64748b; }
@@ -651,7 +663,12 @@ export default function Admin() {
             <h1 className="title">Trang Quản Trị</h1>
             <p className="sub">Theo dõi người dùng, chuyến đi, danh mục và dữ liệu hệ thống.</p>
           </div>
-          <button className="btn" type="button" onClick={loadOverview} disabled={loadingOverview}>Làm mới dữ liệu</button>
+          <div className="head-actions">
+            <span className="admin-meta">{user?.name || 'Admin'}{user?.email ? ` • ${user.email}` : ''}</span>
+            <Link to="/dashboard" className="btn">Về dashboard</Link>
+            <button className="btn" type="button" onClick={loadOverview} disabled={loadingOverview}>Làm mới dữ liệu</button>
+            <button className="btn warn" type="button" onClick={handleLogout}>Đăng xuất</button>
+          </div>
         </div>
 
         <div className="tabs">

@@ -287,10 +287,11 @@ function SampleModal({ guide, onClose }) {
           .guide-modal-sheet {
             left: 50% !important;
             right: auto !important;
-            width: min(960px, calc(100vw - 56px));
+            /* Nới rộng lên 1100px cho xứng tầm với layout 1280px */
+            width: min(1100px, calc(100vw - 64px)); 
             transform: translateX(-50%);
-            bottom: 16px;
-            border-radius: 24px;
+            bottom: 20px; /* Đẩy lên một chút cho thoáng chân */
+            border-radius: 28px; /* Tăng bo góc một chút cho sang */
             animation: popInDesktop 0.28s cubic-bezier(0.16,1,0.3,1);
           }
         }
@@ -346,7 +347,7 @@ export default function Dashboard() {
         .section-title { font-size:16px; font-weight:700; color:var(--text-strong); margin:0 0 12px; }
         .section-subtitle { margin:-6px 0 10px; font-size:12px; color:var(--text-muted); }
         .section-block { margin-bottom: 28px; }
-        .create-form-wrap { margin-bottom:24px; animation:fadeUp 0.3s both; }
+        .create-form-wrap { max-width: 1280px; margin: 0 auto 32px; animation: fadeUp 0.3s both; }
         .trips-head { margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
         .trips-count { font-size:12px; color:var(--text-muted); }
         .search-wrap { position:relative; margin-bottom:14px; }
@@ -355,26 +356,35 @@ export default function Dashboard() {
         .search-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); border:none; background:var(--surface-muted); color:var(--text-muted); border-radius:999px; width:20px; height:20px; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; }
         .new-trip-btn { display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:14px; font-size:14px; font-weight:600; border:none; cursor:pointer; transition:all 0.2s; font-family:inherit; white-space:nowrap; }
         .new-trip-btn.active { background:var(--surface-muted); color:var(--text-muted); }
-        .new-trip-btn.inactive { background:linear-gradient(135deg, var(--brand-primary), var(--accent-indigo)); color:#0b1120; box-shadow:0 4px 16px rgba(34,211,238,0.28); }
+        .new-trip-btn.inactive { background:linear-gradient(135deg, var(--brand-primary), var(--accent-indigo)); color:#fff; box-shadow:0 4px 16px rgba(34,211,238,0.28); }
         .new-trip-btn.inactive:hover { box-shadow:0 6px 24px rgba(34,211,238,0.36); transform:translateY(-1px); }
         .trips-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; }
 
         /* Centered layout */
+        /* Centered layout - Mở rộng lên 1280px cho Desktop */
         @media (min-width: 900px) {
-          .dashboard-header { max-width:960px; margin:0 auto; padding:26px 24px 0; display:flex; justify-content:space-between; align-items:center; gap:16px; }
-          .dashboard-root { max-width:960px; margin:0 auto; padding:24px 24px 60px; }
-          .guides-scroll { display:none !important; }
-          .guides-grid-desktop { display:grid !important; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
+          .dashboard-header { max-width: 1280px; margin: 0 auto; padding: 26px 24px 0; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+          .dashboard-root { max-width: 1280px; margin: 0 auto; padding: 24px 24px 60px; }
+          .guides-scroll { display: none !important; }
+          /* Vẫn giữ 3 cột cho Travel Guides, vì khung to ra nên card sẽ rộng ra */
+          .guides-grid-desktop { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; } 
         }
 
-        @media (max-width: 899px) {
-          .dashboard-header { padding:20px 20px 0; display:flex; justify-content:space-between; align-items:center; gap:10px; }
-          .dashboard-root { padding:20px 20px 60px; }
-          .trips-grid { grid-template-columns:1fr; }
+        /* Setup cho khung lưới hiển thị 4 cột trên màn hình lớn */
+        @media (min-width: 1161px) {
+          .trips-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
         }
 
+        /* Màn hình Laptop nhỏ / Tablet nằm ngang: hiển thị 3 cột */
         @media (min-width: 900px) and (max-width: 1160px) {
-          .trips-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+          .trips-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+        }
+
+        /* Mobile */
+        @media (max-width: 899px) {
+          .dashboard-header { padding: 20px 20px 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+          .dashboard-root { padding: 20px 20px 60px; }
+          .trips-grid { grid-template-columns: 1fr; gap: 16px; }
         }
 
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }

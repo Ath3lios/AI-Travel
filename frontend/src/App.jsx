@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import Navbar from './components/Navbar'
@@ -32,22 +32,33 @@ function AdminRoute({ children }) {
   return user.role === 'admin' ? children : <Navigate to="/dashboard" />
 }
 
+function AppShell() {
+  const location = useLocation()
+  const isAdminRoute = location.pathname.startsWith('/admin')
+
+  return (
+    <>
+      {!isAdminRoute && <Navbar />}
+      <Suspense fallback={<RouteLoading />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/trips/:id" element={<PrivateRoute><TripDetail /></PrivateRoute>} />
+          <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+        </Routes>
+      </Suspense>
+    </>
+  )
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Navbar />
-          <Suspense fallback={<RouteLoading />}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-              <Route path="/trips/:id" element={<PrivateRoute><TripDetail /></PrivateRoute>} />
-              <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-            </Routes>
-          </Suspense>
+          <AppShell />
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
@@ -11,6 +11,10 @@ export default function Navbar() {
   const [openMenu, setOpenMenu] = useState(false)
   const menuRef = useRef(null)
 
+  const isAdmin = user?.role === 'admin'
+  const accountHomePath = isAdmin ? '/admin' : '/dashboard'
+  const accountHomeLabel = isAdmin ? 'Dashboard admin' : 'Chuyến đi của tôi'
+
   const handleLogout = () => {
     setOpenMenu(false)
     logout()
@@ -21,11 +25,12 @@ export default function Navbar() {
     e.preventDefault()
     if (location.pathname !== '/') {
       navigate(`/#${id}`)
-    } else {
-      const element = document.getElementById(id)
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
-      }
+      return
+    }
+
+    const element = document.getElementById(id)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' })
     }
   }
 
@@ -35,14 +40,16 @@ export default function Navbar() {
         setOpenMenu(false)
       }
     }
+
     const handleEscape = (event) => {
       if (event.key === 'Escape') setOpenMenu(false)
     }
+
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleEscape)
-    
+
     if (location.hash) {
-      setTimeout(() => {
+      window.setTimeout(() => {
         const id = location.hash.replace('#', '')
         const element = document.getElementById(id)
         if (element) element.scrollIntoView({ behavior: 'smooth' })
@@ -97,7 +104,6 @@ export default function Navbar() {
           display: block;
           object-fit: contain;
           transition: all 0.3s ease;
-          /* Kỹ thuật dành cho dân IT: Đảo ngược màu tối thành sáng và bù lại sắc độ xanh */
           filter: ${isDark ? 'invert(1) hue-rotate(180deg) brightness(1.5) contrast(1.2)' : 'none'};
         }
 
@@ -145,7 +151,8 @@ export default function Navbar() {
         }
 
         .theme-toggle-btn {
-          width: 40px; height: 40px;
+          width: 40px;
+          height: 40px;
           border-radius: 12px;
           border: 1px solid var(--button-ghost-border);
           background: var(--button-ghost-bg);
@@ -158,7 +165,8 @@ export default function Navbar() {
         }
 
         .nav-avatar-btn {
-          width: 36px; height: 36px;
+          width: 36px;
+          height: 36px;
           border-radius: 999px;
           border: 1px solid #dbe3ee;
           background: linear-gradient(135deg, var(--brand-primary), var(--accent-indigo));
@@ -182,6 +190,23 @@ export default function Navbar() {
           z-index: 50;
         }
 
+        .nav-menu-link {
+          display: block;
+          padding: 9px 12px;
+          color: var(--text-soft);
+          font-size: 13px;
+          font-weight: 600;
+          text-align: center;
+          border-radius: 10px;
+          border: 1px solid var(--border-soft);
+          background: var(--surface-muted);
+        }
+
+        .nav-menu-link:hover {
+          background: var(--nav-link-hover);
+          color: var(--text-strong);
+        }
+
         .nav-menu-logout {
           width: 100%;
           border: 1px solid #fecaca;
@@ -192,6 +217,7 @@ export default function Navbar() {
           font-size: 13px;
           font-weight: 600;
           cursor: pointer;
+          margin-top: 8px;
         }
 
         @media (max-width: 720px) {
@@ -227,8 +253,8 @@ export default function Navbar() {
                   </button>
                   {openMenu && (
                     <div className="nav-menu-popover">
-                      <Link to="/dashboard" style={{textDecoration: 'none'}} onClick={() => setOpenMenu(false)}>
-                        <div style={{padding: '9px 12px', color: 'var(--text-soft)', fontSize: '13px', fontWeight: 600}}>Chuyến đi của tôi</div>
+                      <Link to={accountHomePath} className="nav-menu-link" style={{ textDecoration: 'none' }} onClick={() => setOpenMenu(false)}>
+                        {accountHomeLabel}
                       </Link>
                       <button onClick={handleLogout} className="nav-menu-logout" type="button">Đăng xuất</button>
                     </div>

@@ -194,7 +194,7 @@ function loadGoongSDK() {
 }
 
 // ── Goong Map ────────────────────────────────────────────────────────────────
-function GoongMap({ places, activePlace, dayIndex = 0 }) {
+function GoongMap({ places, activePlace, dayIndex = 0, onMarkerClick }) {
   const mapRef         = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef     = useRef([])
@@ -250,6 +250,10 @@ function GoongMap({ places, activePlace, dayIndex = 0 }) {
 
         outer.addEventListener('mouseenter', () => popup.addTo(map))
         outer.addEventListener('mouseleave', () => popup.remove())
+        outer.addEventListener('click', (e) => {
+          e.stopPropagation()
+          if (onMarkerClick) onMarkerClick(prev => prev === idx ? null : idx)
+        })
         new window.goongjs.Marker({ element:outer, anchor:'center' }).setLngLat([place.lng, place.lat]).addTo(map)
         markersRef.current.push({ outer, inner })
       })
@@ -259,11 +263,29 @@ function GoongMap({ places, activePlace, dayIndex = 0 }) {
   }, [sdkReady, places, dayIndex, activeColor])
 
   useEffect(() => {
-    if (!mapInstanceRef.current || activePlace == null) return
+    if (!mapInstanceRef.current) return
     const valid = (places || []).filter(hasValidCoords)
+    
+    // Nếu không có điểm nào được chọn (activePlace = null), reset lại style của các marker
+    if (activePlace == null) {
+      markersRef.current.forEach(({ outer, inner }, i) => {
+        outer.style.transform  = 'scale(1)'
+        outer.style.boxShadow  = `0 4px 14px ${activeColor}40, 0 1px 3px rgba(0,0,0,0.1)`
+        outer.style.borderColor = activeColor
+        outer.style.background = '#fff'
+        inner.style.background = i === 0 ? activeColor : i === valid.length-1 ? '#ef4444' : '#f8fafc'
+        inner.style.color      = i === 0 || i === valid.length-1 ? '#fff' : activeColor
+      })
+      return
+    }
+
     const place = valid[activePlace]
     if (!place) return
+    
+    // Bay mượt mà đến điểm được chọn
     mapInstanceRef.current.flyTo({ center:[place.lng, place.lat], zoom:15.5, speed:1.4, curve:1.2 })
+    
+    // Hiệu ứng phóng to & sáng màu cho marker đang chọn
     markersRef.current.forEach(({ outer, inner }, i) => {
       const isActive = i === activePlace
       outer.style.transform  = isActive ? 'scale(1.2) translateY(-4px)' : 'scale(1)'
@@ -340,7 +362,7 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
         onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface-muted)'; e.currentTarget.style.color = 'var(--text-muted)' }}
         >×</button>
 
-        <div style={{ padding:'28px 28px 48px' }}>
+        <div style={{ padding:'32px 40px 48px', maxWidth: 960, margin: '0 auto' }}>
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16, marginBottom:6, paddingRight:48 }}>
             <h2 style={{ fontFamily:"'Fraunces', serif", fontSize:32, fontWeight:600, color:'var(--text-strong)', margin:0, lineHeight:1.15, letterSpacing:'-0.5px' }}>
               {item.place}
@@ -399,14 +421,14 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
             <div style={{ display:'grid', gridTemplateColumns: item.best_for && item.nearby ? '1fr 1fr' : '1fr', gap:16, marginBottom:28 }}>
               {item.best_for && (
                 <div style={{ background:'rgba(34,211,238,0.10)', border:'1px solid rgba(34,211,238,0.22)', borderRadius:20, padding:'16px' }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:'#0284c7', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>👥 Phù hợp cho</div>
-                  <div style={{ fontSize:14, color:'#0f172a', lineHeight:1.6 }}>{item.best_for}</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'var(--brand-primary)', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>👥 Phù hợp cho</div>
+                  <div style={{ fontSize:14, color:'var(--text-strong)', lineHeight:1.6 }}>{item.best_for}</div>
                 </div>
               )}
               {item.nearby && (
                 <div style={{ background:'rgba(129,140,248,0.10)', border:'1px solid rgba(129,140,248,0.22)', borderRadius:20, padding:'16px' }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:'#c026d3', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>🗺 Lân cận</div>
-                  <div style={{ fontSize:14, color:'#0f172a', lineHeight:1.6 }}>{item.nearby}</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'var(--accent-indigo)', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>🗺 Lân cận</div>
+                  <div style={{ fontSize:14, color:'var(--text-strong)', lineHeight:1.6 }}>{item.nearby}</div>
                 </div>
               )}
             </div>
@@ -414,10 +436,10 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
 
           <div style={{ borderTop:'1px solid var(--border-soft)', paddingTop:12 }}>
             {[
-              item.opening_hours     && { icon:'🕐', label:'Giờ mở cửa',        value:item.opening_hours,     color:'#0f172a' },
+              item.opening_hours     && { icon:'🕐', label:'Giờ mở cửa',        value:item.opening_hours,     color:'var(--text-strong)' },
               item.entrance_fee      && { icon:'🎫', label:'Vé vào cửa',         value:item.entrance_fee,      color:'var(--accent-indigo)' },
-              item.duration          && { icon:'⏱', label:'Thời gian dự kiến',value:item.duration,          color:'#0f172a' },
-              item.transport_to_next && { icon:'🚗', label:'Di chuyển tiếp theo',value:item.transport_to_next, color:'#0369a1' },
+              item.duration          && { icon:'⏱', label:'Thời gian dự kiến',value:item.duration,          color:'var(--text-strong)' },
+              item.transport_to_next && { icon:'🚗', label:'Di chuyển tiếp theo',value:item.transport_to_next, color:'var(--brand-primary)' },
             ].filter(Boolean).map((row, i) => (
               <div key={i} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 0', borderBottom:'1px solid var(--border-soft)' }}>
                 <div style={{ width:40, height:40, borderRadius:12, background:'var(--surface-muted)', border:'1px solid var(--border-soft)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
@@ -533,7 +555,7 @@ function DayView({ day, dayIndex, accommodation, totalBudget = 0 }) {
 
       <div ref={dayDetailRef} className="day-detail-grid">
         <div className="day-map-col">
-          <GoongMap key={`${dayIndex}-${activePlace}`} places={finalMapPlaces} activePlace={activePlace} dayIndex={dayIndex} />
+          <GoongMap key={dayIndex} places={finalMapPlaces} activePlace={activePlace} dayIndex={dayIndex} onMarkerClick={setActivePlace} />
         </div>
 
         <div className="day-schedule-col">
@@ -628,7 +650,7 @@ export default function ItineraryView({ itinerary, focusDay = null, totalBudget 
   const totalPlaces = (days || []).reduce((sum, day) => sum + (day.schedule?.length || 0), 0)
 
   return (
-    <div style={{ fontFamily:"'DM Sans', sans-serif", maxWidth: 1200, margin: '0 auto', padding: '0 8px' }}>
+    <div style={{ fontFamily:"'DM Sans', sans-serif", width: '100%', margin: '0 auto', padding: '0 8px' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap');
         
