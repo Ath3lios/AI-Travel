@@ -112,7 +112,7 @@ Ghi chú:
 Chạy backend:
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+py -3.13 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Backend mặc định chạy tại `http://localhost:8000`
