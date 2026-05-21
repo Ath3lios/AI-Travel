@@ -3,6 +3,7 @@ from services.route_optimizer import optimize_itinerary_routes
 from .agents import run_agent_langchain, run_agent_new_sdk, run_agent_old_sdk
 from .fallbacks import augment_accommodation_suggestions, build_fallback_itinerary, fallback_schedule_item
 from .runtime import DB_CONTEXT, USE_LANGCHAIN, USE_NEW_SDK
+from .style_profiles import summarize_travel_styles
 
 
 def is_rate_limit_error(error: Exception) -> bool:
@@ -45,6 +46,11 @@ def generate_itinerary(
     planner_context: str = "",
     db=None,
 ) -> dict:
+    style_profile = summarize_travel_styles(travel_style)
+    style_labels = ", ".join(style_profile["labels"]) if style_profile["labels"] else "cân bằng"
+    style_semantics = style_profile["prompt_semantics"]
+    style_guidance = style_profile["prompt_guidance"]
+
     system_prompt = """Bạn là AI Travel Agent chuyên nghiệp.
 PHẢI dùng tools trước khi tạo lịch trình:
   - get_weather_forecast: thời tiết thực tế tại điểm đến
@@ -99,9 +105,15 @@ Apply this context as soft constraints:
 - Điểm đến: {destination}
 - Số ngày: {days}
 - Ngân sách: {budget} VND/người
-- Phong cách: {', '.join(travel_style)}
+- Phong cách người dùng chọn: {style_labels}
 - Số người: {people}
 {context_block}
+
+DIỄN GIẢI SỞ THÍCH ĐÃ CHUẨN HÓA:
+{style_semantics}
+
+HƯỚNG DẪN CÁ THỂ HÓA THEO SỞ THÍCH:
+{style_guidance}
 
 Thực hiện theo thứ tự:
 1. get_weather_forecast({destination}, {min(days, 7)})

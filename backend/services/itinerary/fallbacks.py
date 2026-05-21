@@ -3,6 +3,7 @@ import unicodedata
 
 from .providers import get_top_places_from_db, get_top_places_from_goong, get_weather_forecast
 from .runtime import DB_CONTEXT
+from .style_profiles import summarize_travel_styles
 
 
 DESTINATION_CENTERS = {
@@ -240,6 +241,32 @@ def safe_top_places(destination: str, category: str, limit: int) -> list[dict]:
     return places[:limit]
 
 
+def fresh_top_places(destination: str, category: str, limit: int) -> list[dict]:
+    """
+    Lấy địa điểm cho luồng AI bình thường theo hướng dữ liệu mới:
+      1. Goong API / mock.
+      2. Catalog DB nếu Goong không có kết quả.
+
+    Không dùng synthetic offline ở đây vì synthetic chỉ phù hợp fallback itinerary.
+    """
+    try:
+        data = get_top_places_from_goong(destination, category, limit) or {}
+        places = data.get("places") or []
+        if places:
+            return places[:limit]
+    except Exception:
+        pass
+
+    db = DB_CONTEXT.get()
+    if db is not None:
+        try:
+            return get_top_places_from_db(db, destination, category, limit)[:limit]
+        except Exception:
+            pass
+
+    return []
+
+
 def pick_place(places: list[dict], index: int, city: str, label: str) -> dict:
     if places:
         place = places[min(index, len(places) - 1)]
@@ -294,6 +321,99 @@ def fallback_schedule_item(
     }
 
 
+def _first_matching_style(style_canonicals: list[str], candidates: list[str]) -> str | None:
+    for candidate in candidates:
+        if candidate in style_canonicals:
+            return candidate
+    return None
+
+
+def _preferred_attraction_label(style_canonicals: list[str], slot: str) -> str:
+    slot_preferences = {
+        "morning": {
+            "history": "Di tích lịch sử",
+            "culture": "Không gian văn hóa",
+            "mountain_nature": "Điểm ngắm cảnh thiên nhiên",
+            "beach": "Bãi biển / cung ven biển",
+            "adventure": "Điểm khám phá ngoài trời",
+            "family": "Điểm vui chơi gia đình",
+            "checkin": "Landmark check-in",
+            "romantic": "Điểm hẹn cảnh đẹp",
+            "relaxation": "Không gian thư giãn",
+        },
+        "afternoon": {
+            "mountain_nature": "Cung cảnh quan / đồi núi",
+            "beach": "Điểm ngắm biển / đảo",
+            "checkin": "Điểm chụp ảnh nổi bật",
+            "culture": "Làng nghề / không gian bản địa",
+            "history": "Công trình lịch sử",
+            "adventure": "Hoạt động khám phá",
+            "family": "Điểm trải nghiệm nhẹ nhàng",
+            "shopping": "Khu mua sắm / đặc sản",
+            "relaxation": "Cafe / spa / điểm chill",
+            "romantic": "View đẹp buổi chiều",
+        },
+        "late": {
+            "nightlife": "Khu phố đêm / điểm giải trí tối",
+            "shopping": "Chợ đêm / phố mua sắm",
+            "romantic": "Điểm ngắm hoàng hôn",
+            "beach": "Bờ biển chiều muộn",
+            "checkin": "Spot ánh sáng đẹp cuối ngày",
+            "relaxation": "Không gian thư giãn cuối ngày",
+            "family": "Điểm đi dạo dễ chịu",
+        },
+    }
+    selected = _first_matching_style(style_canonicals, list(slot_preferences[slot].keys()))
+    return slot_preferences[slot].get(selected, "Điểm tham quan")
+
+
+def _accommodation_why(style_canonicals: list[str]) -> str:
+    if "relaxation" in style_canonicals:
+        return "Ưu tiên không gian yên tĩnh, nghỉ ngơi tốt và thuận tiện thư giãn cuối ngày."
+    if "romantic" in style_canonicals:
+        return "Ưu tiên nơi lưu trú có view đẹp, riêng tư và phù hợp trải nghiệm cho cặp đôi."
+    if "family" in style_canonicals:
+        return "Ưu tiên nơi ở an toàn, dễ di chuyển và phù hợp nhóm gia đình nhiều độ tuổi."
+    if "beach" in style_canonicals:
+        return "Ưu tiên nơi ở thuận tiện ra biển và dễ đón các hoạt động sáng sớm hoặc hoàng hôn."
+    if "nightlife" in style_canonicals:
+        return "Ưu tiên nơi ở gần khu trung tâm để thuận tiện cho hoạt động tối nhưng vẫn dễ quay về nghỉ."
+    return "Gần khu trung tâm, thuận tiện di chuyển theo lịch trình fallback."
+
+
+def _packing_list(style_canonicals: list[str]) -> list[str]:
+    items = ["Giày đi bộ", "Áo khoác mỏng", "Kem chống nắng", "Tiền mặt dự phòng", "Giấy tờ tùy thân", "Sạc dự phòng"]
+    extras = {
+        "beach": ["Đồ bơi", "Kính mát"],
+        "mountain_nature": ["Giày bám tốt", "Áo chống gió mỏng"],
+        "food": ["Thuốc tiêu hóa cơ bản"],
+        "checkin": ["Pin dự phòng cho điện thoại"],
+        "adventure": ["Bình nước cá nhân"],
+        "family": ["Đồ dùng cá nhân cho trẻ em"],
+        "romantic": ["Trang phục đẹp cho buổi tối"],
+        "shopping": ["Túi gấp gọn để đựng đồ mua sắm"],
+        "nightlife": ["Áo khoác nhẹ cho buổi tối"],
+        "relaxation": ["Dép thoải mái", "Đồ dùng chăm sóc cá nhân"],
+    }
+    for style in style_canonicals:
+        for item in extras.get(style, []):
+            if item not in items:
+                items.append(item)
+    return items
+
+
+def _style_day_suffix(style_canonicals: list[str], day_no: int, safe_days: int) -> str:
+    if "romantic" in style_canonicals and day_no in {1, safe_days}:
+        return " • nhịp đi lãng mạn"
+    if "nightlife" in style_canonicals and day_no == safe_days:
+        return " • thiên về buổi tối"
+    if "relaxation" in style_canonicals:
+        return " • nhịp đi thư giãn"
+    if "adventure" in style_canonicals:
+        return " • nhịp đi khám phá"
+    return ""
+
+
 def build_fallback_itinerary(
     destination: str,
     days: int,
@@ -308,6 +428,11 @@ def build_fallback_itinerary(
     safe_people = max(1, int(people or 1))
     budget_int = max(1_000_000, safe_int(budget, 3_000_000))
     per_day = max(300_000, budget_int // safe_days)
+    style_profile = summarize_travel_styles(travel_style)
+    style_labels = style_profile["labels"]
+    style_canonicals = style_profile["canonicals"]
+    style_note = ", ".join(style_labels) if style_labels else "cân bằng"
+    style_agent_note = style_profile["agent_note"]
     start_city = departure_city or "Điểm xuất phát"
     start_center = destination_center(start_city)
     dest_center = destination_center(destination)
@@ -331,9 +456,17 @@ def build_fallback_itinerary(
         breakfast = pick_place(restaurants, day_idx * 3 + 0, destination, "Quán ăn sáng")
         lunch = pick_place(restaurants, day_idx * 3 + 1, destination, "Quán ăn trưa")
         dinner = pick_place(restaurants, day_idx * 3 + 2, destination, "Quán ăn tối")
-        spot1 = pick_place(attractions, day_idx * 4 + 0, destination, "Điểm tham quan")
-        spot2 = pick_place(attractions, day_idx * 4 + 1, destination, "Điểm tham quan")
-        spot3 = pick_place(attractions, day_idx * 4 + 2, destination, "Điểm tham quan")
+        spot1 = pick_place(attractions, day_idx * 4 + 0, destination, _preferred_attraction_label(style_canonicals, "morning"))
+        spot2 = pick_place(attractions, day_idx * 4 + 1, destination, _preferred_attraction_label(style_canonicals, "afternoon"))
+        spot3 = pick_place(attractions, day_idx * 4 + 2, destination, _preferred_attraction_label(style_canonicals, "late"))
+
+        if "nightlife" in style_canonicals:
+            dinner["name"] = f"{dinner['name']} - khu vui chơi tối"
+
+        if "food" in style_canonicals:
+            breakfast["name"] = f"{breakfast['name']} - món địa phương"
+            lunch["name"] = f"{lunch['name']} - đặc sản vùng"
+            dinner["name"] = f"{dinner['name']} - trải nghiệm ẩm thực"
 
         if is_long_trip and day_no == 1:
             route_breakfast = pick_place(route_stops, 0, destination, "Điểm dừng chân")
@@ -376,8 +509,15 @@ def build_fallback_itinerary(
                 estimated_cost=fmt_vnd(max(40_000, per_day // 15)),
                 duration="45 phút",
                 description="Bữa sáng hoặc điểm nghỉ đầu ngày để giữ nhịp lịch trình.",
-                tips="Ưu tiên quán gần tuyến di chuyển, có chỗ gửi xe/hành lý và phục vụ nhanh.",
-                highlights=["Nạp năng lượng", "Thuận tiện theo tuyến"],
+                tips=(
+                    "Ưu tiên quán gần tuyến di chuyển, có chỗ gửi xe/hành lý và phục vụ nhanh."
+                    if "family" not in style_canonicals
+                    else "Ưu tiên quán sạch sẽ, chỗ ngồi thoải mái và phù hợp đi cùng trẻ nhỏ/người lớn tuổi."
+                ),
+                highlights=[
+                    "Nạp năng lượng",
+                    "Khởi động nhẹ nhàng" if "relaxation" in style_canonicals else "Thuận tiện theo tuyến",
+                ],
             ),
             fallback_schedule_item(
                 time="09:30", period="Sáng",
@@ -385,9 +525,25 @@ def build_fallback_itinerary(
                 lat=spot1["lat"], lng=spot1["lng"],
                 estimated_cost=fmt_vnd(max(0, per_day // 12)),
                 duration="1.5 giờ",
-                description=f"Điểm dừng/tham quan được xếp theo hướng từ {start_city} đến {destination}.",
-                tips="Nếu đây là điểm dừng trên đường, chỉ nghỉ vừa đủ để không trễ lịch nhận phòng hoặc lịch chiều.",
-                highlights=["Theo tuyến hành trình", "Có tọa độ hiển thị bản đồ"],
+                description=(
+                    f"Điểm dừng/tham quan được xếp theo hướng từ {start_city} đến {destination}, ưu tiên phù hợp với nhóm sở thích {style_note}."
+                ),
+                tips=(
+                    "Nếu đây là điểm dừng trên đường, chỉ nghỉ vừa đủ để không trễ lịch nhận phòng hoặc lịch chiều."
+                    if "adventure" not in style_canonicals
+                    else "Có thể dành thêm thời gian khám phá nếu cung đường và thể lực cho phép, nhưng vẫn giữ mốc giờ trưa."
+                ),
+                highlights=[
+                    "Theo tuyến hành trình",
+                    "Có tọa độ hiển thị bản đồ",
+                    "Không khí bản địa" if "culture" in style_canonicals else (
+                        "Giá trị kể chuyện" if "history" in style_canonicals else (
+                            "View thiên nhiên" if "mountain_nature" in style_canonicals else (
+                                "Chụp ảnh đẹp" if "checkin" in style_canonicals else "Phù hợp mở đầu ngày"
+                            )
+                        )
+                    ),
+                ],
             ),
             fallback_schedule_item(
                 time="11:30", period="Trưa",
@@ -396,8 +552,16 @@ def build_fallback_itinerary(
                 estimated_cost=fmt_vnd(max(70_000, per_day // 10)),
                 duration="1 giờ",
                 description="Ăn trưa và nghỉ ngơi ngắn trước lịch chiều.",
-                tips="Chọn quán có niêm yết giá rõ ràng, nhất là khi dừng ở khu du lịch hoặc trạm nghỉ.",
-                highlights=["Bổ sung năng lượng", "Giảm mệt khi di chuyển"],
+                tips=(
+                    "Chọn quán có niêm yết giá rõ ràng, nhất là khi dừng ở khu du lịch hoặc trạm nghỉ."
+                    if "food" not in style_canonicals
+                    else "Ưu tiên món đặc sản đúng vùng và hỏi món signature của quán để bữa trưa có bản sắc hơn."
+                ),
+                highlights=[
+                    "Bổ sung năng lượng",
+                    "Giảm mệt khi di chuyển",
+                    "Đặc sản địa phương" if "food" in style_canonicals else "Giữ nhịp lịch trình",
+                ],
             ),
             fallback_schedule_item(
                 time="14:00", period="Chiều",
@@ -405,9 +569,21 @@ def build_fallback_itinerary(
                 lat=spot2["lat"], lng=spot2["lng"],
                 estimated_cost=fmt_vnd(max(0, per_day // 12)),
                 duration="1.5 giờ",
-                description=f"Tham quan điểm nổi bật tại {destination} hoặc gần tuyến đến điểm đến.",
-                tips="Tránh khung nắng gắt, mang nước uống và kiểm tra giờ mở cửa trước khi đi.",
-                highlights=["Điểm chính trong ngày", "Phù hợp chụp ảnh"],
+                description=(
+                    f"Tham quan điểm nổi bật tại {destination} hoặc gần tuyến đến điểm đến, ưu tiên sát với nhóm sở thích {style_note}."
+                ),
+                tips=(
+                    "Tránh khung nắng gắt, mang nước uống và kiểm tra giờ mở cửa trước khi đi."
+                    if "mountain_nature" not in style_canonicals
+                    else "Ưu tiên khung giờ thoáng, mang nước uống và giày dễ di chuyển nếu điểm nằm ở đồi núi/cung ngoài trời."
+                ),
+                highlights=[
+                    "Điểm chính trong ngày",
+                    "Phù hợp chụp ảnh" if "checkin" in style_canonicals else "Dễ ghé trong lịch chiều",
+                    "Không gian riêng tư" if "romantic" in style_canonicals else (
+                        "Phù hợp gia đình" if "family" in style_canonicals else "Dễ cá nhân hóa"
+                    ),
+                ],
             ),
             fallback_schedule_item(
                 time="16:30", period="Chiều",
@@ -415,9 +591,23 @@ def build_fallback_itinerary(
                 lat=spot3["lat"], lng=spot3["lng"],
                 estimated_cost=fmt_vnd(max(0, per_day // 14)),
                 duration="1 giờ",
-                description="Điểm kết hợp tham quan/relax trước buổi tối.",
-                tips="Cuối chiều thường dễ chụp ảnh hơn; giữ sức cho hoạt động buổi tối.",
-                highlights=["Dễ kết hợp ăn tối", "Linh hoạt theo thời tiết"],
+                description=(
+                    "Điểm kết hợp tham quan/relax trước buổi tối."
+                    if "shopping" not in style_canonicals
+                    else "Điểm ghé cuối chiều phù hợp để kết nối sang mua sắm, chợ địa phương hoặc khu trung tâm."
+                ),
+                tips=(
+                    "Cuối chiều thường dễ chụp ảnh hơn; giữ sức cho hoạt động buổi tối."
+                    if "romantic" not in style_canonicals
+                    else "Đây là khung giờ phù hợp cho sunset, cafe view hoặc một điểm có không khí riêng tư hơn."
+                ),
+                highlights=[
+                    "Dễ kết hợp ăn tối",
+                    "Linh hoạt theo thời tiết" if "relaxation" not in style_canonicals else "Nhịp nhẹ, dễ thư giãn",
+                    "Mua sắm cuối ngày" if "shopping" in style_canonicals else (
+                        "Hoàng hôn đẹp" if "romantic" in style_canonicals else "Chốt lịch chiều"
+                    ),
+                ],
             ),
             fallback_schedule_item(
                 time="18:30", period="Tối",
@@ -425,9 +615,23 @@ def build_fallback_itinerary(
                 lat=dinner["lat"], lng=dinner["lng"],
                 estimated_cost=fmt_vnd(max(90_000, per_day // 8)),
                 duration="1.5 giờ",
-                description="Ăn tối và tự do khám phá khu vực trung tâm.",
-                tips="Nên đặt bàn trước nếu đi nhóm đông; hỏi giá trước khi gọi món hải sản/đặc sản.",
-                highlights=["Ẩm thực địa phương", "Kết thúc ngày nhẹ nhàng"],
+                description=(
+                    "Ăn tối và tự do khám phá khu vực trung tâm."
+                    if "nightlife" not in style_canonicals
+                    else "Ăn tối rồi nối mạch sang khu phố đêm, chợ đêm hoặc hoạt động buổi tối phù hợp."
+                ),
+                tips=(
+                    "Nên đặt bàn trước nếu đi nhóm đông; hỏi giá trước khi gọi món hải sản/đặc sản."
+                    if "romantic" not in style_canonicals
+                    else "Nếu muốn trải nghiệm lãng mạn hơn, nên đặt bàn trước ở quán có view đẹp hoặc không gian riêng tư."
+                ),
+                highlights=[
+                    "Ẩm thực địa phương",
+                    "Không khí buổi tối sôi động" if "nightlife" in style_canonicals else "Kết thúc ngày nhẹ nhàng",
+                    "Phù hợp hẹn hò" if "romantic" in style_canonicals else (
+                        "Đi cùng gia đình ổn định" if "family" in style_canonicals else "Khám phá trung tâm"
+                    ),
+                ],
             ),
         ])
 
@@ -448,7 +652,11 @@ def build_fallback_itinerary(
 
         itinerary_days.append({
             "day": day_no,
-            "title": f"Ngày {day_no}: {start_city} - {destination}" if day_no == 1 else f"Ngày {day_no} tại {destination}",
+            "title": (
+                f"Ngày {day_no}: {start_city} - {destination}{_style_day_suffix(style_canonicals, day_no, safe_days)}"
+                if day_no == 1
+                else f"Ngày {day_no} tại {destination}{_style_day_suffix(style_canonicals, day_no, safe_days)}"
+            ),
             "weather": day_weather,
             "schedule": schedule,
         })
@@ -459,13 +667,12 @@ def build_fallback_itinerary(
             "name": str(hotel.get("name") or f"Khách sạn {destination} {idx + 1}"),
             "area": str(hotel.get("address") or destination),
             "price_range": estimate_price_range_from_budget(str(budget_int)),
-            "why": "Gần khu trung tâm, thuận tiện di chuyển theo lịch trình fallback.",
+            "why": _accommodation_why(style_canonicals),
             "lat": float(hotel.get("lat") or 0),
             "lng": float(hotel.get("lng") or 0),
         })
 
     total_cost = budget_int * safe_people
-    style_note = ", ".join(travel_style or []) if travel_style else "cân bằng"
     notes = "Fallback offline: lịch trình được sinh không phụ thuộc Gemini, weather, Goong, geocoding hoặc routing."
     if fail_reason:
         notes += f" Reason: {fail_reason[:220]}"
@@ -481,7 +688,7 @@ def build_fallback_itinerary(
         },
         "days": itinerary_days,
         "accommodation": accommodation,
-        "packing_list": ["Giày đi bộ", "Áo khoác mỏng", "Kem chống nắng", "Tiền mặt dự phòng", "Giấy tờ tùy thân", "Sạc dự phòng"],
+        "packing_list": _packing_list(style_canonicals),
         "budget_breakdown": {
             "luu_tru": fmt_vnd(max(0, int(total_cost * 0.35))),
             "an_uong": fmt_vnd(max(0, int(total_cost * 0.25))),
@@ -489,7 +696,7 @@ def build_fallback_itinerary(
             "hoat_dong": fmt_vnd(max(0, int(total_cost * 0.15))),
             "mua_sam_phat_sinh": fmt_vnd(max(0, int(total_cost * 0.05))),
         },
-        "agent_notes": f"{notes} Planning style: {style_note}.",
+        "agent_notes": f"{notes} Planning style labels: {style_note}. Canonical styles: {style_agent_note}.",
         "generation_source": "fallback_offline_route",
     }
 
@@ -504,7 +711,7 @@ def augment_accommodation_suggestions(itinerary: dict, destination: str, budget:
         itinerary["accommodation"] = accommodation
         return itinerary
 
-    for place in safe_top_places(destination, "hotel", max(need + 2, 6)):
+    for place in fresh_top_places(destination, "hotel", max(need + 2, 6)):
         name = str(place.get("name", "")).strip()
         if not name or name.lower() in existing_names:
             continue

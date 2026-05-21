@@ -18,7 +18,6 @@ export default function HeroSection({ user }) {
   
   useEffect(() => {
     if (desktopCarouselImages.length <= 1) {
-      setActiveDesktopSlide(0)
       return undefined
     }
 

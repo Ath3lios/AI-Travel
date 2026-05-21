@@ -149,24 +149,6 @@ function formatBudgetValue(value) {
   return String(value)
 }
 
-function parseBudgetNumber(value) {
-  if (value == null) return 0
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
-  const text = String(value)
-  const normalized = text.replace(/\./g, '').replace(/,/g, '')
-  const matches = normalized.match(/\d+/g)
-  if (!matches?.length) return 0
-  const number = Number(matches[matches.length - 1])
-  return Number.isFinite(number) ? number : 0
-}
-
-function formatCompactCurrency(value) {
-  const amount = Number(value || 0)
-  if (!amount) return '0 đ'
-  if (amount >= 1000000) return `${(amount / 1000000).toFixed(amount >= 10000000 ? 0 : 1).replace(/\.0$/, '')} triệu`
-  return `${Math.round(amount / 1000)}k`
-}
-
 let _goongLoadPromise = null
 
 function loadGoongSDK() {
@@ -260,7 +242,7 @@ function GoongMap({ places, activePlace, dayIndex = 0, onMarkerClick }) {
     })
 
     return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null } }
-  }, [sdkReady, places, dayIndex, activeColor])
+  }, [sdkReady, places, dayIndex, activeColor, onMarkerClick])
 
   useEffect(() => {
     if (!mapInstanceRef.current) return
@@ -515,7 +497,7 @@ function PlaceModal({ item, onClose, activeColor, modalRect }) {
   )
 }
 
-function DayView({ day, dayIndex, accommodation, totalBudget = 0 }) {
+function DayView({ day, dayIndex, accommodation }) {
   const [activePlace, setActivePlace] = useState(null)
   const [modalItem, setModalItem] = useState(null)
   const [modalRect, setModalRect] = useState(null)
@@ -596,7 +578,6 @@ function DayView({ day, dayIndex, accommodation, totalBudget = 0 }) {
                   style={{ '--active-color': activeColor, '--active-bg': `${activeColor}11` }}
                 >
                   <div className="schedule-item-icon-wrapper">
-                    {idx < sortedSchedule.length - 1 && <div className="schedule-connector" />}
                     <div className={`schedule-item-icon ${isActive ? 'active-icon' : ''}`}>
                       {placeIcon}
                     </div>
@@ -639,7 +620,7 @@ function DayView({ day, dayIndex, accommodation, totalBudget = 0 }) {
   )
 }
 
-export default function ItineraryView({ itinerary, focusDay = null, totalBudget = 0 }) {
+export default function ItineraryView({ itinerary, focusDay = null }) {
   if (!itinerary) return null
   const { days, accommodation, packing_list, budget_breakdown } = itinerary
 
@@ -703,19 +684,32 @@ export default function ItineraryView({ itinerary, focusDay = null, totalBudget 
         
         .schedule-item-row {
           display: grid; grid-template-columns: 44px minmax(0,1fr) 16px; gap: 12px; align-items: center;
-          padding: 12px 16px; background: white; border-radius: 16px; cursor: pointer; border: 1px solid transparent;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.02); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
+          padding: 12px 16px; background: white; border-radius: 16px; cursor: pointer; border: 1px solid rgba(148,163,184,0.28);
+          box-shadow: 0 2px 10px rgba(15,23,42,0.035); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
         }
-        .schedule-item-row:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-color: #e2e8f0; }
+        .schedule-item-row:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(15,23,42,0.08); border-color: color-mix(in srgb, var(--active-color) 36%, #94a3b8); }
         .schedule-item-row.active { background: var(--active-bg); border-color: var(--active-color); box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
         
-        .schedule-item-icon-wrapper { position: relative; display: flex; justify-content: center; height: 100%; align-items: center; }
-        .schedule-connector { position: absolute; width: 2px; background: #e2e8f0; top: 32px; bottom: -22px; left: 50%; transform: translateX(-50%); z-index: 0; }
+        .schedule-item-icon-wrapper { position: relative; display: flex; justify-content: center; height: 100%; align-items: center; isolation: isolate; }
         .schedule-item-icon {
-          width: 36px; height: 36px; border-radius: 50%; background: #f8fafc; border: 2px solid #e2e8f0;
+          width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(180deg, #ffffff, #f8fafc); border: 2px solid rgba(148,163,184,0.35);
           display: flex; align-items: center; justify-content: center; font-size: 16px; position: relative; z-index: 1; transition: all 0.3s;
+          box-shadow: 0 0 0 5px var(--surface-panel), 0 8px 18px rgba(15,23,42,0.08), 0 0 0 1px rgba(255,255,255,0.7) inset;
         }
-        .schedule-item-icon.active-icon { background: white; border-color: var(--active-color); box-shadow: 0 0 0 3px var(--active-bg); }
+        .schedule-item-icon::after {
+          content: '';
+          position: absolute;
+          inset: -8px;
+          border-radius: inherit;
+          background: radial-gradient(circle, var(--active-bg) 0%, transparent 68%);
+          z-index: -1;
+          opacity: 0.7;
+        }
+        .schedule-item-icon.active-icon {
+          background: white;
+          border-color: var(--active-color);
+          box-shadow: 0 0 0 5px var(--surface-panel), 0 0 0 8px var(--active-bg), 0 12px 24px var(--active-bg);
+        }
 
         .map-badge { font-size: 11px; padding: 4px 10px; border-radius: 8px; background: #f1f5f9; color: #475569; font-weight: 700; cursor: pointer; transition: all 0.2s; }
         .map-badge:hover { background: var(--active-color); color: white; }
@@ -731,7 +725,6 @@ export default function ItineraryView({ itinerary, focusDay = null, totalBudget 
         @media(max-width:900px){
           .schedule-item-row { grid-template-columns: 48px minmax(0,1fr) auto; gap: 12px; padding: 16px; }
           .schedule-item-icon { width: 38px; height: 38px; font-size: 18px; }
-          .schedule-connector { top: 38px; bottom: -28px; }
           .bottom-grid { grid-template-columns: 1fr !important; }
         }
 
@@ -915,7 +908,6 @@ export default function ItineraryView({ itinerary, focusDay = null, totalBudget 
             day={day}
             dayIndex={focusDayIndex !== null ? focusDayIndex : i}
             accommodation={accommodation}
-            totalBudget={parseBudgetNumber(totalBudget)}
           />
         ))}
       </div>

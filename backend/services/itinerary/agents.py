@@ -19,6 +19,39 @@ from .runtime import (
     lc_tool,
 )
 
+RETRYABLE_MODEL_ERROR_TOKENS = (
+    "500",
+    "502",
+    "503",
+    "504",
+    "429",
+    "403",
+    "quota",
+    "resource_exhausted",
+    "rate limit",
+    "rate_limit",
+    "too many requests",
+    "permission_denied",
+    "permission denied",
+    "forbidden",
+    "model not found",
+    "not found for api version",
+    "timeout",
+    "deadline exceeded",
+    "connection reset",
+    "connection aborted",
+    "connection error",
+    "temporarily unavailable",
+    "unavailable",
+    "service unavailable",
+    "overloaded",
+    "internal error",
+    "jsondecodeerror",
+    "expecting value",
+    "empty output",
+    "empty itinerary",
+)
+
 TOOL_MAP = {
     "get_weather_forecast": get_weather_forecast,
     "get_top_places":       get_top_places,
@@ -71,21 +104,33 @@ TOOL_DECLARATIONS = [
 
 
 def is_model_access_error(error: Exception) -> bool:
+    return is_retryable_model_error(error)
+
+
+def is_retryable_model_error(error: Exception) -> bool:
+    if isinstance(error, (TypeError, AttributeError, ImportError, ModuleNotFoundError)):
+        return False
     text = repr(error).lower()
-    return any(token in text for token in (
-        "403",
-        "permission_denied",
-        "permission denied",
-        "forbidden",
-        "quota",
-        "resource_exhausted",
-        "model not found",
-        "not found for api version",
-    ))
+    return any(token in text for token in RETRYABLE_MODEL_ERROR_TOKENS)
 
 
 def model_list() -> tuple[str, ...]:
     return GEMINI_MODELS or ("gemini-2.5-flash", "gemini-2.5-flash-lite")
+
+
+def run_with_model_retries(system_prompt: str, user_prompt: str, runner, runner_label: str) -> dict:
+    last_error = None
+    for model_name in model_list():
+        for attempt in range(1, 3):
+            try:
+                print(f"Gemini {runner_label} model: {model_name} attempt {attempt}/2")
+                return runner(system_prompt, user_prompt, model_name)
+            except Exception as err:
+                last_error = err
+                print(f"Gemini {runner_label} model failed ({model_name} attempt {attempt}/2):", repr(err))
+                if not is_retryable_model_error(err):
+                    raise
+    raise last_error or RuntimeError(f"All Gemini {runner_label} models failed")
 
 
 def execute_tool(name: str, args: dict) -> str:
@@ -155,17 +200,7 @@ def run_agent_langchain_once(system_prompt: str, user_prompt: str, model_name: s
 
 
 def run_agent_langchain(system_prompt: str, user_prompt: str) -> dict:
-    last_error = None
-    for model_name in model_list():
-        try:
-            print(f"Gemini LangChain model: {model_name}")
-            return run_agent_langchain_once(system_prompt, user_prompt, model_name)
-        except Exception as err:
-            last_error = err
-            print(f"Gemini LangChain model failed ({model_name}):", repr(err))
-            if not is_model_access_error(err):
-                raise
-    raise last_error or RuntimeError("All Gemini LangChain models failed")
+    return run_with_model_retries(system_prompt, user_prompt, run_agent_langchain_once, "LangChain")
 
 
 def run_agent_new_sdk_once(system_prompt: str, user_prompt: str, model_name: str) -> dict:
@@ -213,17 +248,7 @@ def run_agent_new_sdk_once(system_prompt: str, user_prompt: str, model_name: str
 
 
 def run_agent_new_sdk(system_prompt: str, user_prompt: str) -> dict:
-    last_error = None
-    for model_name in model_list():
-        try:
-            print(f"Gemini SDK model: {model_name}")
-            return run_agent_new_sdk_once(system_prompt, user_prompt, model_name)
-        except Exception as err:
-            last_error = err
-            print(f"Gemini SDK model failed ({model_name}):", repr(err))
-            if not is_model_access_error(err):
-                raise
-    raise last_error or RuntimeError("All Gemini SDK models failed")
+    return run_with_model_retries(system_prompt, user_prompt, run_agent_new_sdk_once, "SDK")
 
 
 def run_agent_old_sdk_once(system_prompt: str, user_prompt: str, model_name: str) -> dict:
@@ -265,14 +290,4 @@ def run_agent_old_sdk_once(system_prompt: str, user_prompt: str, model_name: str
 
 
 def run_agent_old_sdk(system_prompt: str, user_prompt: str) -> dict:
-    last_error = None
-    for model_name in model_list():
-        try:
-            print(f"Gemini old SDK model: {model_name}")
-            return run_agent_old_sdk_once(system_prompt, user_prompt, model_name)
-        except Exception as err:
-            last_error = err
-            print(f"Gemini old SDK model failed ({model_name}):", repr(err))
-            if not is_model_access_error(err):
-                raise
-    raise last_error or RuntimeError("All Gemini old SDK models failed")
+    return run_with_model_retries(system_prompt, user_prompt, run_agent_old_sdk_once, "old SDK")

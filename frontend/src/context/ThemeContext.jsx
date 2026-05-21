@@ -1,12 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { ThemeContext } from './theme-context'
 
 const STORAGE_KEY = 'ai-travel-theme-v2'
-const ThemeContext = createContext(null)
-
-function getSystemTheme() {
-  if (typeof window === 'undefined') return 'dark'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
 
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'dark'
@@ -43,10 +38,4 @@ export function ThemeProvider({ children }) {
   }), [theme])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext)
-  if (!context) throw new Error('useTheme must be used within ThemeProvider')
-  return context
 }

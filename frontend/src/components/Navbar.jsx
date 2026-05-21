@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme } from '../context/useTheme'
 
 export default function Navbar() {
   const { user, logout } = useAuth()

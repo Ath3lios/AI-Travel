@@ -3,17 +3,17 @@ import api from '../services/api'
 
 const STYLES = [
   { label: 'Biển', icon: '🌊' },
-  { label: 'Ăn uống', icon: '🍜' },
+  { label: 'Núi rừng', icon: '⛰️' },
+  { label: 'Ẩm thực', icon: '🍜' },
   { label: 'Check-in', icon: '📸' },
-  { label: 'Thiên nhiên', icon: '🌿' },
   { label: 'Văn hóa', icon: '🏛️' },
-  { label: 'Mua sắm', icon: '🛍️' },
-  { label: 'Nghỉ dưỡng', icon: '🧘' },
-  { label: 'Mạo hiểm', icon: '🚵' },
-  { label: 'Gia đình', icon: '👨‍👩‍👧' },
   { label: 'Lịch sử', icon: '📚' },
+  { label: 'Phiêu lưu', icon: '🚵' },
+  { label: 'Gia đình', icon: '👨‍👩‍👧' },
+  { label: 'Lãng mạn', icon: '💕' },
+  { label: 'Mua sắm', icon: '🛍️' },
   { label: 'Nightlife', icon: '🌃' },
-  { label: 'Ẩm thực đường phố', icon: '🍢' },
+  { label: 'Nghỉ dưỡng', icon: '🧘' },
 ]
 
 const BUDGET_PRESETS = [
@@ -21,8 +21,6 @@ const BUDGET_PRESETS = [
   { label: 'Trung bình', value: '3000000', desc: '~3 triệu' },
   { label: 'Thoải mái', value: '6000000', desc: '~6 triệu' },
 ]
-const MIN_BUDGET = 500000
-const MAX_BUDGET = 15000000
 
 const CREATE_TRIP_TIMEOUT_MS = 120000
 const RECOVERY_POLL_RETRIES = 5
@@ -40,10 +38,14 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-function formatBudgetLabel(value) {
-  const amount = Number(value || 0)
-  if (!amount) return '0 đ'
-  return `${amount.toLocaleString('vi-VN')} đ`
+function sanitizeBudgetInput(value) {
+  return String(value || '').replace(/[^\d]/g, '')
+}
+
+function formatBudgetInput(value) {
+  const digits = sanitizeBudgetInput(value)
+  if (!digits) return ''
+  return Number(digits).toLocaleString('vi-VN')
 }
 
 function today() {
@@ -158,6 +160,10 @@ export default function TripForm({ onTripCreated, editTrip }) {
     })
   }
 
+  const handleBudgetInput = (value) => {
+    setForm(prev => ({ ...prev, budget: sanitizeBudgetInput(value) }))
+  }
+
   const findRecoveredTrip = async (payload, startedAt) => {
     const fromTime = startedAt - 15000
     const normDestination = payload.destination.trim().toLowerCase()
@@ -211,11 +217,14 @@ export default function TripForm({ onTripCreated, editTrip }) {
     if (!form.departure_city) { setError('Vui lòng nhập thành phố xuất phát'); return }
     if (form.travel_style.length === 0) { setError('Vui lòng chọn ít nhất 1 phong cách'); return }
     if (days < 1) { setError('Ngày về phải sau ngày đi'); return }
+    const budget = sanitizeBudgetInput(form.budget)
+    if (!budget) { setError('Vui lòng nhập ngân sách'); return }
+    if (budget !== form.budget) setForm(prev => ({ ...prev, budget }))
     const payload = {
       destination: form.destination,
       departure_city: form.departure_city,
       days: days,
-      budget: form.budget,
+      budget,
       travel_style: form.travel_style,
       people: form.people,
     }
@@ -350,9 +359,10 @@ export default function TripForm({ onTripCreated, editTrip }) {
         .trip-form-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 22px; }
         .trip-panel { background: linear-gradient(180deg, var(--surface-panel), var(--surface-panel-alt)); border: 1px solid var(--border-soft); border-radius: 18px; padding: 20px; }
         .trip-panel-title { margin: 0 0 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
-        .budget-slider { width: 100%; accent-color: var(--brand-primary); margin: 12px 0 10px; }
-        .budget-scale { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-muted); }
-        .budget-value { font-size: 24px; font-weight: 700; color: var(--text-strong); font-family: 'Fraunces', serif; letter-spacing: -0.02em; }
+        .budget-value-row { display: flex; align-items: baseline; gap: 8px; }
+        .budget-value-input { width: 100%; min-width: 0; border: 0; border-bottom: 1.5px solid var(--border-soft); border-radius: 0; padding: 0 0 4px; background: transparent; font-size: 24px; font-weight: 700; color: var(--text-strong); font-family: 'Fraunces', serif; letter-spacing: -0.02em; outline: none; }
+        .budget-value-input:focus { border-bottom-color: var(--brand-primary); box-shadow: none; }
+        .budget-value-unit { font-size: 14px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
         .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
         .summary-card { border-radius: 14px; background: var(--surface-panel-alt); border: 1px solid var(--border-soft); padding: 12px 14px; }
         .summary-card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px; }
@@ -472,19 +482,16 @@ export default function TripForm({ onTripCreated, editTrip }) {
 
                 <div>
                   <label className="form-label">💰 Ngân sách / người</label>
-                  <div className="budget-value">{formatBudgetLabel(form.budget)}</div>
-                  <input
-                    type="range"
-                    min={MIN_BUDGET}
-                    max={MAX_BUDGET}
-                    step={250000}
-                    value={Number(form.budget || MIN_BUDGET)}
-                    onChange={e => setForm({ ...form, budget: e.target.value })}
-                    className="budget-slider"
-                  />
-                  <div className="budget-scale">
-                    <span>0.5 triệu</span>
-                    <span>15 triệu</span>
+                  <div className="budget-value-row">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="budget-value-input"
+                      value={formatBudgetInput(form.budget)}
+                      onChange={e => handleBudgetInput(e.target.value)}
+                      aria-label="Nhập ngân sách mỗi người"
+                    />
+                    <span className="budget-value-unit">đ / người</span>
                   </div>
                 </div>
               </div>
@@ -516,7 +523,6 @@ export default function TripForm({ onTripCreated, editTrip }) {
                       className={`style-btn ${form.travel_style.includes(s.label) ? 'active' : ''}`}
                       onClick={() => toggleStyle(s.label)}>
                       <span>{s.icon}</span> {s.label}
-                      {form.travel_style.includes(s.label) && <span style={{ color: 'var(--brand-primary)' }}>✓</span>}
                     </button>
                   ))}
                 </div>

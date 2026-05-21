@@ -13,10 +13,6 @@ const OVERVIEW_BUDGET_LABELS = {
   mua_sam_phat_sinh: '🛍️ Mua sắm',
 }
 
-function estimatePlaces(itineraryDays) {
-  return itineraryDays.reduce((sum, day) => sum + (day.schedule?.length || 0), 0)
-}
-
 const OverviewTab = memo(function OverviewTab({ itinerary, onSwitchToDay }) {
   const itineraryDays = useMemo(() => itinerary?.days || [], [itinerary?.days])
 

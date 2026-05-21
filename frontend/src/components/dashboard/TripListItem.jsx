@@ -1,6 +1,6 @@
 ﻿import { memo, useMemo } from 'react'
 import useDestinationImage from '../../hooks/useDestinationImage'
-import { formatCurrencyVND, formatRelativeDate } from '../../utils/formatters'
+import { formatRelativeDate } from '../../utils/formatters'
 
 function getAccentGradient(destination) {
   const d = destination || ''
@@ -18,19 +18,6 @@ function TripListItem({ trip, onClick, onDelete, index }) {
   )
   const ago = formatRelativeDate(trip.created_at)
 
-  let peopleCount = trip.people;
-  if (!peopleCount && trip.itinerary?.trip_summary?.estimated_cost) {
-    const match = trip.itinerary.trip_summary.estimated_cost.match(/([\d,.]+)/);
-    if (match) {
-      const totalFromAI = Number(match[1].replace(/[,.]/g, '')); 
-      const baseBudget = Number(trip.budget) || 1;
-      peopleCount = Math.round(totalFromAI / baseBudget); 
-    }
-  }
-  peopleCount = peopleCount || 1;
-  const totalBudget = (Number(trip.budget) || 0) * peopleCount;
-  const budgetText = formatCurrencyVND(totalBudget);
-
   const coverStyle = imgUrl ? `url(${imgUrl}) center/cover` : getAccentGradient(trip.destination)
 
   return (
@@ -46,7 +33,7 @@ function TripListItem({ trip, onClick, onDelete, index }) {
         cursor: 'pointer',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         animation: `fadeUp 0.4s ${index * 0.06}s both`,
-        minHeight: 320,
+        minHeight: 280,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = '0 20px 40px -8px rgba(14, 66, 108, 0.15)'
@@ -88,34 +75,8 @@ function TripListItem({ trip, onClick, onDelete, index }) {
           background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 60%, rgba(15,23,42,0.9) 100%)',
         }} />
 
-        <div style={{
-          position: 'absolute',
-          top: 14,
-          left: 14,
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-        }}>
-          {/* FIX 1: Ép height 32px và flex center cho Số Ngày */}
-          <span style={{
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: 12,
-            fontWeight: 700,
-            color: 'white',
-            background: 'rgba(0, 0, 0, 0.45)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: 999,
-            padding: '0 12px',
-            backdropFilter: 'blur(8px)',
-          }}>
-            {trip.days} ngày
-          </span>
-        </div>
-        
         <div style={{ position: 'absolute', right: 14, top: 14 }}>
-          {/* FIX 1: Ép height 32px và flex center cho Thùng Rác */}
+          {/* Nút Thùng Rác */}
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(trip.id, e) }}
             style={{
@@ -182,49 +143,16 @@ function TripListItem({ trip, onClick, onDelete, index }) {
           flexDirection: 'column',
           gap: '12px', 
         }}>
-          {/* FIX 2: Bọc emoji vào thẻ span có width cố định (24px) để dóng hàng */}
+          {/* Số ngày thay thế cho Ngân sách */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: 15, fontWeight: 700, color: 'var(--text-strong, #0f172a)' }}>
-            <span style={{ fontSize: 18, filter: 'grayscale(0.2)', width: '24px', display: 'flex', justifyContent: 'center' }}>💳</span> 
-            {budgetText ? `${budgetText}` : 'Chưa có'}
+            <span style={{ fontSize: 18, filter: 'grayscale(0.2)', width: '24px', display: 'flex', justifyContent: 'center' }}>📅</span> 
+            {trip.days} ngày
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: 15, fontWeight: 700, color: 'var(--text-strong, #0f172a)' }}>
             <span style={{ fontSize: 18, filter: 'grayscale(0.2)', width: '24px', display: 'flex', justifyContent: 'center' }}>📍</span> 
             {totalSpots} địa điểm khám phá
           </div>
         </div>
-
-        <button 
-          style={{
-            marginTop: 'auto', 
-            width: '100%',
-            fontSize: 15,
-            fontWeight: 700,
-            color: '#fff', // Cố định màu trắng để nổi bật trên nền xanh
-            background: 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)',
-            borderRadius: 14,
-            padding: '12px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            border: 'none',
-            boxShadow: '0 6px 16px rgba(0, 114, 255, 0.25)',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 10px 24px rgba(0, 114, 255, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 114, 255, 0.25)';
-          }}
-        >
-          Xem lịch trình 
-          <span style={{ fontSize: 18, transition: 'transform 0.2s' }}>→</span>
-        </button>
-
       </div>
     </div>
   )

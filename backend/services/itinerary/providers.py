@@ -233,8 +233,13 @@ def get_top_places_from_db(db: Session, city: str, category: str, limit: int) ->
 
 def get_top_places(city: str, category: str, limit: int = 5) -> dict:
     """
-    Hàm dùng cho AI agent tool: ưu tiên catalog DB → Goong/mock.
+    Hàm dùng cho AI agent tool: ưu tiên Goong/mock để lịch trình luôn mới,
+    sau đó mới dùng catalog DB như lớp backup nội bộ.
     """
+    goong_result = get_top_places_from_goong(city, category, limit)
+    if goong_result.get("places"):
+        return goong_result
+
     db = DB_CONTEXT.get()
     if db is not None:
         places = get_top_places_from_db(db, city, category, limit)
@@ -242,7 +247,7 @@ def get_top_places(city: str, category: str, limit: int = 5) -> dict:
             return {"city": city, "category": category,
                     "places": places, "source": "catalog_db"}
 
-    return get_top_places_from_goong(city, category, limit)
+    return goong_result
 
 
 # ══════════════════════════════════════════════════════════════════════════════
