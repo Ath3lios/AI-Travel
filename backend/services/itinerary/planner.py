@@ -1,7 +1,7 @@
 from services.route_optimizer import optimize_itinerary_routes
 
 from .agents import run_agent_langchain, run_agent_new_sdk, run_agent_old_sdk
-from .fallbacks import augment_accommodation_suggestions, build_fallback_itinerary, fallback_schedule_item
+from .fallbacks import augment_accommodation_suggestions, augment_schedule_coordinates, build_fallback_itinerary, fallback_schedule_item
 from .runtime import DB_CONTEXT, USE_LANGCHAIN, USE_NEW_SDK
 from .style_profiles import summarize_travel_styles
 
@@ -23,6 +23,11 @@ def is_rate_limit_error(error: Exception) -> bool:
 
 
 def finalize_itinerary(itinerary: dict, destination: str, budget: str) -> dict:
+    try:
+        itinerary = augment_schedule_coordinates(itinerary, destination)
+    except Exception as coordinate_err:
+        print("coordinate augmentation skipped:", repr(coordinate_err))
+
     try:
         itinerary = optimize_itinerary_routes(itinerary)
     except Exception as route_err:

@@ -1,6 +1,8 @@
 import math
 import unicodedata
 
+from services.goong_service import forward_geocode
+
 from .providers import get_top_places_from_db, get_top_places_from_goong, get_weather_forecast
 from .runtime import DB_CONTEXT
 from .style_profiles import summarize_travel_styles
@@ -283,6 +285,98 @@ def pick_place(places: list[dict], index: int, city: str, label: str) -> dict:
         "lat": float(place.get("lat") or 0),
         "lng": float(place.get("lng") or 0),
     }
+
+
+def _has_valid_coords(item: dict) -> bool:
+    try:
+        lat = float(item.get("lat"))
+        lng = float(item.get("lng"))
+    except (TypeError, ValueError):
+        return False
+    return lat != 0 and lng != 0 and -90 <= lat <= 90 and -180 <= lng <= 180
+
+
+def _known_center_in_text(value: str) -> tuple[float, float] | None:
+    key = normalize_key(value)
+    for name, coords in DESTINATION_CENTERS.items():
+        if name in key:
+            return coords
+    return None
+
+
+def _item_center(item: dict, destination: str) -> tuple[float, float]:
+    address = str(item.get("address") or item.get("area") or "")
+    known = _known_center_in_text(address) or _known_center_in_text(destination)
+    if known:
+        return known
+    return destination_center(address or destination)
+
+
+def _geocode_query(item: dict, destination: str) -> str:
+    parts = [
+        str(item.get("address") or item.get("area") or "").strip(),
+        str(item.get("place") or item.get("name") or "").strip(),
+        str(destination or "").strip(),
+        "Vietnam",
+    ]
+    unique_parts = []
+    seen = set()
+    for part in parts:
+        key = normalize_key(part)
+        if part and key not in seen:
+            unique_parts.append(part)
+            seen.add(key)
+    return ", ".join(unique_parts)
+
+
+def _geocode_coords(item: dict, destination: str) -> tuple[float, float] | None:
+    query = _geocode_query(item, destination)
+    if not query:
+        return None
+    try:
+        data = forward_geocode(query) or {}
+    except Exception:
+        return None
+
+    for result in data.get("results") or []:
+        candidate = {"lat": result.get("lat"), "lng": result.get("lng")}
+        if _has_valid_coords(candidate):
+            return float(candidate["lat"]), float(candidate["lng"])
+    return None
+
+
+def _fill_missing_coords(item: dict, destination: str, sequence: int) -> None:
+    geocoded = _geocode_coords(item, destination)
+    if geocoded:
+        item["lat"], item["lng"] = geocoded
+        item["coordinate_source"] = "geocode"
+        return
+
+    lat, lng = offset_coords(_item_center(item, destination), sequence)
+    item["lat"] = lat
+    item["lng"] = lng
+    item["coordinate_source"] = "offline_fallback"
+
+
+def augment_schedule_coordinates(itinerary: dict, destination: str) -> dict:
+    if not isinstance(itinerary, dict):
+        return itinerary
+
+    sequence = 0
+    for day in itinerary.get("days") or []:
+        for item in day.get("schedule") or []:
+            if not isinstance(item, dict) or _has_valid_coords(item):
+                continue
+            sequence += 1
+            _fill_missing_coords(item, destination, sequence)
+
+    for hotel in itinerary.get("accommodation") or []:
+        if not isinstance(hotel, dict) or _has_valid_coords(hotel):
+            continue
+        sequence += 1
+        _fill_missing_coords(hotel, destination, sequence)
+
+    return itinerary
 
 
 def fallback_schedule_item(

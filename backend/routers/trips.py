@@ -4,6 +4,7 @@ from database import get_db, Trip, Destination, Hotel, Activity
 from models.trip import TripCreate, TripRegenerate, TripUpdate
 from routers.auth import get_current_user
 from services.gemini_service import generate_itinerary_resilient
+from services.itinerary.fallbacks import augment_schedule_coordinates
 from datetime import datetime
 import json
 
@@ -71,13 +72,16 @@ def _delete_legacy_catalog_rows_for_trip(db: Session, trip) -> None:
 
 
 def trip_to_dict(trip) -> dict:
+    itinerary = json.loads(trip.itinerary) if trip.itinerary else None
+    if itinerary:
+        itinerary = augment_schedule_coordinates(itinerary, trip.destination)
     return {
         'id': str(trip.id),
         'user_id': str(trip.user_id),
         'destination': trip.destination,
         'days': trip.days,
         'budget': trip.budget,
-        'itinerary': json.loads(trip.itinerary) if trip.itinerary else None,
+        'itinerary': itinerary,
         'created_at': trip.created_at,
     }
 
